@@ -16,9 +16,7 @@ type DB struct {
 	ClickHouse clickhouse.Conn
 }
 
-// Connect подключается к Postgres и ClickHouse Cloud через безопасные соединения
 func Connect(postgresDSN, clickhouseUser, clickhousePass, clickhouseHost string) (*DB, error) {
-	// --- Подключение к Postgres ---
 	pg, err := sql.Open("postgres", postgresDSN)
 	if err != nil {
 		return nil, err
@@ -32,7 +30,6 @@ func Connect(postgresDSN, clickhouseUser, clickhousePass, clickhouseHost string)
 		return nil, err
 	}
 
-	// --- Подключение к ClickHouse Cloud (HTTPS, TLS) ---
 	ch, err := clickhouse.Open(&clickhouse.Options{
 		Addr: []string{clickhouseHost},
 		Auth: clickhouse.Auth{
@@ -41,7 +38,7 @@ func Connect(postgresDSN, clickhouseUser, clickhousePass, clickhouseHost string)
 			Password: clickhousePass,
 		},
 		TLS: &tls.Config{
-			InsecureSkipVerify: true, // безопасно для ClickHouse Cloud
+			InsecureSkipVerify: true,
 		},
 		DialTimeout:  5 * time.Second,
 		MaxOpenConns: 10,
@@ -51,7 +48,6 @@ func Connect(postgresDSN, clickhouseUser, clickhousePass, clickhouseHost string)
 		return nil, err
 	}
 
-	// Проверка соединения ClickHouse
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := ch.Ping(ctx); err != nil {

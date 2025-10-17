@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/astanx/anime_api/internal/service"
+	"github.com/google/uuid"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,31 +19,19 @@ func NewDeviceHandler(s *service.DeviceService) *DeviceHandler {
 		service: s,
 	}
 }
-
-func (h *DeviceHandler) GetUsers(c *gin.Context) {
-	users, err := h.service.GetUserByDeviceID("aaa")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, users)
-}
-
 func (h *DeviceHandler) AddDeviceID(c *gin.Context) {
-	var req struct {
-		DeviceID string `json:"device_id" binding:"required"`
-	}
+	deviceId := uuid.New()
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
-		return
-	}
-
-	_, err := h.service.AddDeviceID(req.DeviceID)
+	_, err := h.service.AddDeviceID(deviceId)
 	if err != nil {
-		log.Println("failed to add device: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "cant add device"})
+		log.Printf("failed to add device: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "can't add device"})
 		return
 	}
-	c.Status(http.StatusOK)
+
+	type response struct {
+		ID string `json:"id"`
+	}
+
+	c.JSON(http.StatusOK, response{ID: deviceId.String()})
 }

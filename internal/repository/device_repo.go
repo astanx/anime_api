@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"log"
 
-	"github.com/ClickHouse/clickhouse-go/v2"
+	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/astanx/anime_api/internal/db"
 	"github.com/astanx/anime_api/internal/model"
+	"github.com/google/uuid"
 )
 
 type DeviceRepo struct {
@@ -22,16 +23,7 @@ func NewDeviceRepo(db *db.DB) *DeviceRepo {
 	}
 }
 
-func (r *DeviceRepo) GetByDeviceID(deviceID string) (model.User, error) {
-	var u model.User
-	err := r.dbPostgres.QueryRow(
-		"SELECT id, name FROM users WHERE device_id=$1",
-		deviceID,
-	).Scan(&u.ID, &u.Name)
-	return u, err
-}
-
-func (r *DeviceRepo) AddDeviceID(deviceID string) (model.User, error) {
+func (r *DeviceRepo) AddDeviceID(deviceID uuid.UUID) (model.User, error) {
 	var u model.User
 
 	err := r.dbPostgres.QueryRow(

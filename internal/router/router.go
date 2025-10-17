@@ -1,4 +1,3 @@
-// internal/router/router.go
 package router
 
 import (
@@ -19,7 +18,6 @@ func NewRouter(databases *db.DB) *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
-
 		deviceRepository := repository.NewDeviceRepo(databases)
 		deviceService := service.NewDeviceService(deviceRepository)
 		deviceHandler := handler.NewDeviceHandler(deviceService)
@@ -27,6 +25,31 @@ func NewRouter(databases *db.DB) *gin.Engine {
 		users := v1.Group("/users")
 		{
 			users.POST("/device", deviceHandler.AddDeviceID)
+		}
+	}
+
+	{
+		animeRepository := repository.NewAnimeRepo(databases)
+		animeService := service.NewAnimeService(animeRepository)
+		animeHandler := handler.NewAnimeHandler(animeService)
+
+		anime := v1.Group("/anime")
+		{
+			consumet := anime.Group("/consumet")
+			{
+				consumet.GET("/", animeHandler.SearchConsumetAnime)
+				consumet.GET("/genres", animeHandler.GetConsumetGenres)
+				consumet.GET("/latest", animeHandler.SearchConsumetLatestReleases)
+				consumet.GET("/", animeHandler.SearchConsumetGenreReleases)
+			}
+			anilibria := anime.Group("/consumet")
+			{
+				anilibria.GET("/", animeHandler.SearchAnilibriaAnime)
+				anilibria.GET("/genres", animeHandler.GetAnilibriaGenres)
+				anilibria.GET("/latest", animeHandler.SearchAnilibriaLatestReleases)
+				anilibria.GET("/random", animeHandler.SearchAnilibriaRandomReleases)
+				anilibria.GET("/", animeHandler.SearchAnilibriaGenreReleases)
+			}
 		}
 	}
 
