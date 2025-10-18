@@ -24,7 +24,7 @@ func NewRouter(databases *db.DB) *gin.Engine {
 
 		users := v1.Group("/users")
 		{
-			users.POST("/device", deviceHandler.AddDeviceID)
+			users.GET("/device", deviceHandler.AddDeviceID)
 		}
 	}
 
@@ -40,15 +40,15 @@ func NewRouter(databases *db.DB) *gin.Engine {
 				consumet.GET("/", animeHandler.SearchConsumetAnime)
 				consumet.GET("/genres", animeHandler.GetConsumetGenres)
 				consumet.GET("/latest", animeHandler.SearchConsumetLatestReleases)
-				consumet.GET("/", animeHandler.SearchConsumetGenreReleases)
+				consumet.GET("/genre/releases", animeHandler.SearchConsumetGenreReleases)
 			}
-			anilibria := anime.Group("/consumet")
+			anilibria := anime.Group("/anilibria")
 			{
 				anilibria.GET("/", animeHandler.SearchAnilibriaAnime)
 				anilibria.GET("/genres", animeHandler.GetAnilibriaGenres)
 				anilibria.GET("/latest", animeHandler.SearchAnilibriaLatestReleases)
 				anilibria.GET("/random", animeHandler.SearchAnilibriaRandomReleases)
-				anilibria.GET("/", animeHandler.SearchAnilibriaGenreReleases)
+				anilibria.GET("/genre/releases", animeHandler.SearchAnilibriaGenreReleases)
 			}
 		}
 	}

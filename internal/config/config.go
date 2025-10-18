@@ -16,10 +16,11 @@ type Config struct {
 }
 
 func LoadConfig() (*Config, error) {
-	if err := godotenv.Load(); err != nil {
-		log.Println(".env file not found, using environment variables")
+	if _, err := os.Stat(".env"); err == nil {
+		if err := godotenv.Load(); err != nil {
+			log.Println("Failed to load .env file:", err)
+		}
 	}
-
 	addr := os.Getenv("SERVER_ADDRESS")
 	if addr == "" {
 		addr = ":8080"
