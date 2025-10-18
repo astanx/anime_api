@@ -197,3 +197,126 @@ func (h *AnimeHandler) SearchAnilibriaRandomReleases(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"results": genres})
 }
+
+func (h *AnimeHandler) SearchAnimeByID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Println("missing id param in GetSearchAnimeByID")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
+		return
+	}
+
+	anime, err := h.service.SearchAnimeByID(id)
+	if err != nil {
+		log.Printf("GetSearchAnimeByID: failed to get anime: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get anime"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": anime})
+}
+
+func (h *AnimeHandler) GetAnimeInfoByConsumetID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Println("missing id param in GetAnimeInfoByConsumetID")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
+		return
+	}
+
+	anime, err := h.service.GetAnimeInfoByConsumetID(id)
+	if err != nil {
+		log.Printf("GetAnimeInfoByConsumetID: failed to get anime info: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get anime info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": anime})
+}
+
+func (h *AnimeHandler) GetAnimeInfoByAnilibriaID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Println("missing id param in GetAnimeInfoByAnilibriaID")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
+		return
+	}
+
+	anime, err := h.service.GetAnimeInfoByAnilibriaID(id)
+	if err != nil {
+		log.Printf("GetAnimeInfoByAnilibriaID: failed to get anime info: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get anime info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": anime})
+}
+
+func (h *AnimeHandler) GetAnilibriaEpisodeInfo(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Println("missing id param in GetAnilibriaEpisodeInfo")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
+		return
+	}
+
+	episode, err := h.service.GetAnilibriaEpisodeInfo(id)
+	if err != nil {
+		log.Printf("GetAnilibriaEpisodeInfo: failed to get episode info: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get episode info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": episode})
+}
+
+func (h *AnimeHandler) GetConsumetEpisodeInfo(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Println("missing id param in GetConsumetEpisodeInfo")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
+		return
+	}
+
+	episode, err := h.service.GetConsumetEpisodeInfo(id)
+	if err != nil {
+		log.Printf("GetConsumetEpisodeInfo: failed to get episode info: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get episode info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": episode})
+}
+
+func (h *AnimeHandler) SearchConsumetRecommendedAnime(c *gin.Context) {
+	anime, err := h.service.SearchConsumetRecommendedAnime()
+	if err != nil {
+		log.Printf("SearchConsumetRecommendedAnime: failed to get releases: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get releases"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"results": anime})
+}
+
+func (h *AnimeHandler) SearchAnilibriaRecommendedAnime(c *gin.Context) {
+	limitStr := c.Query("limit")
+	if limitStr == "" {
+		limitStr = "14"
+	}
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil {
+		log.Printf("SearchAnilibriaRecommendedAnime: invalid limit: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
+		return
+	}
+
+	anime, err := h.service.SearchAnilibriaRecommendedAnime(limit)
+	if err != nil {
+		log.Printf("SearchAnilibriaRecommendedAnime: failed to get releases: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get releases"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"results": anime})
+}

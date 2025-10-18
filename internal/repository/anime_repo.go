@@ -21,7 +21,7 @@ func NewAnimeRepo(db *db.DB) *AnimeRepo {
 	}
 }
 
-func (r *AnimeRepo) GetSearchAnimeByID(id string) (model.SearchAnime, error) {
+func (r *AnimeRepo) SearchAnimeByID(id string) (model.SearchAnime, error) {
 	row := r.dbPostgres.QueryRow("SELECT id, title, year, poster, type, parser_type FROM search WHERE id = $1", id)
 	var anime model.SearchAnime
 	err := row.Scan(&anime.ID, &anime.Title, &anime.Year, &anime.Poster, &anime.Type, &anime.ParserType)
@@ -229,7 +229,7 @@ func (r *AnimeRepo) SearchAnilibriaRecommendedAnime(limit int) ([]model.SearchAn
 	return result, nil
 }
 
-func (r *AnimeRepo) SearchConsumetRecommendedAnime(limit int) ([]model.SearchAnime, error) {
+func (r *AnimeRepo) SearchConsumetRecommendedAnime() ([]model.SearchAnime, error) {
 	result, err := fetchConsumetReleases("most-popular")
 	if err != nil {
 		return nil, err
