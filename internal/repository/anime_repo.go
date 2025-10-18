@@ -294,7 +294,7 @@ func (r *AnimeRepo) SearchAnilibriaRandomReleases(limit int) ([]model.SearchAnim
 }
 
 func (r *AnimeRepo) GetAnilibriaGenres() ([]model.Genre, error) {
-	baseURL := "https://aniliberty.top/api/v1/anime/genres/%s?include=id,name,total_releases"
+	baseURL := "https://aniliberty.top/api/v1/anime/genres?include=id,name,total_releases"
 
 	var result []model.Genre
 	if err := doJSONRequest(baseURL, &result); err != nil {
