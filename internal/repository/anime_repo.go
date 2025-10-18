@@ -262,7 +262,7 @@ func (r *AnimeRepo) SearchConsumetLatestReleases(limit int) ([]model.SearchAnime
 }
 
 func (r *AnimeRepo) SearchAnilibriaLatestReleases(limit int) ([]model.SearchAnime, error) {
-	result, err := fetchAnilibriaReleases("releases/latest", "", limit)
+	result, err := fetchAnilibriaReleases("anime/releases/latest", "", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -278,7 +278,7 @@ func (r *AnimeRepo) SearchAnilibriaLatestReleases(limit int) ([]model.SearchAnim
 }
 
 func (r *AnimeRepo) SearchAnilibriaRandomReleases(limit int) ([]model.SearchAnime, error) {
-	result, err := fetchAnilibriaReleases("releases/random", "", limit)
+	result, err := fetchAnilibriaReleases("anime/releases/random", "", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -323,7 +323,7 @@ func (r *AnimeRepo) GetConsumetGenres() ([]model.ConsumetGenre, error) {
 }
 
 func (r *AnimeRepo) SearchAnilibriaGenreReleases(genreID, limit int) ([]model.SearchAnime, error) {
-	result, err := fetchAnilibriaReleases(fmt.Sprintf("releases/genre/%d/releases", genreID), "", limit)
+	result, err := fetchAnilibriaReleases(fmt.Sprintf("anime/releases/genre/%d/releases", genreID), "", limit)
 	if err != nil {
 		return nil, err
 	}
