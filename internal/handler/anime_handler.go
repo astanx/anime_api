@@ -78,16 +78,16 @@ func (h *AnimeHandler) GetConsumetGenres(c *gin.Context) {
 }
 
 func (h *AnimeHandler) SearchAnilibriaGenreReleases(c *gin.Context) {
-	genreIdStr := c.Query("genreId")
+	genreIdStr := c.Query("genre")
 	if genreIdStr == "" {
-		log.Println("missing genreId param in SearchAnilibriaGenreReleases")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "genreId param is required"})
+		log.Println("missing genre param in SearchAnilibriaGenreReleases")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "genre param is required"})
 		return
 	}
 	genreId, err := strconv.Atoi(genreIdStr)
 	if err != nil {
-		log.Printf("SearchAnilibriaGenreReleases: invalid genreId: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "genreId must be an integer"})
+		log.Printf("SearchAnilibriaGenreReleases: invalid genre: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "genre must be an integer"})
 		return
 	}
 	limitStr := c.Query("limit")
@@ -153,19 +153,7 @@ func (h *AnimeHandler) SearchAnilibriaLatestReleases(c *gin.Context) {
 }
 
 func (h *AnimeHandler) SearchConsumetLatestReleases(c *gin.Context) {
-	limitStr := c.Query("limit")
-	if limitStr == "" {
-		log.Println("missing limit param in SearchConsumetLatestReleases")
-		c.JSON(http.StatusBadRequest, gin.H{"error": "limit param is required"})
-		return
-	}
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		log.Printf("SearchConsumetLatestReleases: invalid limit: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
-		return
-	}
-	genres, err := h.service.SearchConsumetLatestReleases(limit)
+	genres, err := h.service.SearchConsumetLatestReleases()
 	if err != nil {
 		log.Printf("SearchConsumetLatestReleases: failed to get releases: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get releases"})
@@ -277,8 +265,22 @@ func (h *AnimeHandler) GetConsumetEpisodeInfo(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
 		return
 	}
+	title := c.Query("title")
+	ordinalStr := c.Query("ordinal")
+	var ordinal int
+	if ordinalStr == "" {
+		ordinal = -1
+	} else {
+		var err error
+		ordinal, err = strconv.Atoi(ordinalStr)
+		if err != nil {
+			log.Printf("SearchAnilibriaRecommendedAnime: invalid limit: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
+			return
+		}
+	}
 
-	episode, err := h.service.GetConsumetEpisodeInfo(id)
+	episode, err := h.service.GetConsumetEpisodeInfo(id, title, ordinal)
 	if err != nil {
 		log.Printf("GetConsumetEpisodeInfo: failed to get episode info: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get episode info"})

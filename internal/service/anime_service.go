@@ -30,8 +30,8 @@ func (s *AnimeService) SearchAnilibriaRecommendedAnime(limit int) ([]model.Searc
 	return s.repo.SearchAnilibriaRecommendedAnime(limit)
 }
 
-func (s *AnimeService) SearchConsumetLatestReleases(limit int) ([]model.SearchAnime, error) {
-	return s.repo.SearchConsumetLatestReleases(limit)
+func (s *AnimeService) SearchConsumetLatestReleases() ([]model.SearchAnime, error) {
+	return s.repo.SearchConsumetLatestReleases()
 }
 
 func (s *AnimeService) SearchAnilibriaLatestReleases(limit int) ([]model.SearchAnime, error) {
@@ -51,7 +51,7 @@ func (s *AnimeService) SearchAnilibriaGenreReleases(genreID, limit int) ([]model
 }
 
 // Get genres
-func (s *AnimeService) GetConsumetGenres() ([]model.ConsumetGenre, error) {
+func (s *AnimeService) GetConsumetGenres() ([]string, error) {
 	return s.repo.GetConsumetGenres()
 }
 
@@ -77,6 +77,6 @@ func (s *AnimeService) GetAnilibriaEpisodeInfo(id string) (model.Episode, error)
 	return s.repo.GetAnilibriaEpisodeInfo(id)
 }
 
-func (s *AnimeService) GetConsumetEpisodeInfo(id string) (model.Episode, error) {
-	return s.repo.GetConsumetEpisodeInfo(id)
+func (s *AnimeService) GetConsumetEpisodeInfo(id string, title string, ordinal int) (model.Episode, error) {
+	return s.repo.GetConsumetEpisodeInfo(id, title, ordinal)
 }

@@ -5,7 +5,3 @@ type Genre struct {
 	Name          string `json:"name"`
 	TotalReleases int    `json:"total_releases"`
 }
-
-type ConsumetGenre struct {
-	Name string `json:"name"`
-}

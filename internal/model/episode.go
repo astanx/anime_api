@@ -7,9 +7,9 @@ type PreviewEpisode struct {
 }
 
 type PreviewConsumetEpisode struct {
-	ID      string `json:"id"`
-	Ordinal int    `json:"number"`
-	Title   string `json:"title"`
+	ID     string `json:"id"`
+	Number int    `json:"number"`
+	Title  string `json:"title"`
 }
 
 type TimeSegment struct {
@@ -61,8 +61,7 @@ type ConsumetEpisode struct {
 	Ordinal int         `json:"ordinal"`
 	Title   string      `json:"title"`
 	Intro   TimeSegment `json:"intro"`
-
-	Outro TimeSegment `json:"outro"`
+	Outro   TimeSegment `json:"outro"`
 
 	Sources []Source `json:"sources"`
 

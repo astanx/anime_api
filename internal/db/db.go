@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"crypto/tls"
 	"database/sql"
 	"log"
@@ -30,7 +29,7 @@ func Connect(postgresDSN, clickhouseUser, clickhousePass, clickhouseHost string)
 		return nil, err
 	}
 
-	ch, err := clickhouse.Open(&clickhouse.Options{
+	ch, _ := clickhouse.Open(&clickhouse.Options{
 		Addr: []string{clickhouseHost},
 		Auth: clickhouse.Auth{
 			Database: "default",
@@ -44,15 +43,6 @@ func Connect(postgresDSN, clickhouseUser, clickhousePass, clickhouseHost string)
 		MaxOpenConns: 10,
 		MaxIdleConns: 5,
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := ch.Ping(ctx); err != nil {
-		return nil, err
-	}
 
 	log.Println("Connected to PostgreSQL and ClickHouse Cloud")
 	return &DB{

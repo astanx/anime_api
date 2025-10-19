@@ -85,13 +85,15 @@ func fetchAnilibriaReleases(endpoint string, query string, limit int) ([]model.S
 func fetchConsumetReleases(endpoint string) ([]model.SearchAnime, error) {
 	baseURL := fmt.Sprintf("https://consumet-caou.onrender.com/anime/zoro/%s", endpoint)
 
-	var rawResult []model.SearchAnime
+	var rawResult struct {
+		Results []model.SearchAnime `json:"results"`
+	}
 	if err := doJSONRequest(baseURL, &rawResult); err != nil {
 		return nil, err
 	}
 
-	result := make([]model.SearchAnime, 0, len(rawResult))
-	for _, a := range rawResult {
+	result := make([]model.SearchAnime, 0, len(rawResult.Results))
+	for _, a := range rawResult.Results {
 		result = append(result, model.SearchAnime{
 			ID:         a.ID,
 			Title:      a.Title,
@@ -119,7 +121,7 @@ func checkExists(db *sql.DB, id string) bool {
 
 func insertSearchAnime(db *sql.DB, anime model.SearchAnime) {
 	_, err := db.Exec(
-		"INSERT INTO search (id, title, year, poster, type, parser_type) VALUES ($1, $2, $3, $4, $5, $6)",
+		"INSERT INTO search (id, title, year, poster, type, parser_type) VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (id) DO NOTHING",
 		anime.ID, anime.Title, anime.Year, anime.Poster, anime.Type, anime.ParserType,
 	)
 	if err != nil {
@@ -128,7 +130,7 @@ func insertSearchAnime(db *sql.DB, anime model.SearchAnime) {
 }
 
 func insertEpisode(db *sql.DB, episode model.Episode) {
-	_, e := db.Exec("INSERT INTO episodes (id, anime_id ordinal, title, opening_start, opening_end, ending_start, ending_end) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+	_, e := db.Exec("INSERT INTO episodes (id, ordinal, title, opening_start, opening_end, ending_start, ending_end) VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT (id) DO NOTHING",
 		episode.ID, episode.Ordinal, episode.Title,
 		episode.Opening.Start, episode.Opening.End,
 		episode.Ending.Start, episode.Ending.End)
@@ -136,14 +138,14 @@ func insertEpisode(db *sql.DB, episode model.Episode) {
 		log.Printf("Error inserting anime: %v", e)
 	}
 	for _, source := range episode.Sources {
-		_, e = db.Exec("INSERT INTO episode_sources (episode_id, url, type) VALUES ($1, $2, $3)", episode.ID, source.Url, source.Type)
+		_, e = db.Exec("INSERT INTO episode_sources (episode_id, url, type) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING", episode.ID, source.Url, source.Type)
 		if e != nil {
 			log.Printf("Error inserting source: %v", e)
 		}
 	}
 
 	for _, subtitle := range episode.Subtitles {
-		_, e = db.Exec("INSERT INTO episode_subtitles (episode_id, vtt, language) VALUES ($1, $2, $3)", episode.ID, subtitle.Vtt, subtitle.Language)
+		_, e = db.Exec("INSERT INTO episode_subtitles (episode_id, vtt, language) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING", episode.ID, subtitle.Vtt, subtitle.Language)
 		if e != nil {
 			log.Printf("Error inserting subtitle: %v", e)
 		}
@@ -169,7 +171,7 @@ func getEpisode(db *sql.DB, id string) (model.Episode, bool, error) {
 		&openingStart, &openingEnd,
 		&endingStart, &endingEnd,
 	)
-	if err == nil {
+	if err != nil {
 		return model.Episode{}, false, nil
 	}
 

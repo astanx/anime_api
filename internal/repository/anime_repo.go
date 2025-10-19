@@ -34,9 +34,30 @@ func (r *AnimeRepo) SearchAnimeByID(id string) (model.SearchAnime, error) {
 
 func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 	url := fmt.Sprintf("https://consumet-caou.onrender.com/anime/zoro/info?id=%s", id)
-	var anime model.Anime
-	if err := doJSONRequest(url, &anime); err != nil {
+	var result model.ConsumetAnime
+	if err := doJSONRequest(url, &result); err != nil {
 		return model.Anime{}, err
+	}
+	var anime = model.Anime{
+		ID:            result.ID,
+		Title:         result.Title,
+		Poster:        result.Image,
+		Description:   result.Description,
+		Genres:        result.Genres,
+		Status:        result.Status,
+		Type:          result.Type,
+		TotalEpisodes: result.TotalEpisodes,
+		Episodes: func() []model.PreviewEpisode {
+			episodes := make([]model.PreviewEpisode, len(result.Episodes))
+			for i, e := range result.Episodes {
+				episodes[i] = model.PreviewEpisode{
+					ID:      e.ID,
+					Ordinal: e.Number,
+					Title:   e.Title,
+				}
+			}
+			return episodes
+		}(),
 	}
 	return anime, nil
 }
@@ -61,11 +82,9 @@ func (r *AnimeRepo) GetAnimeInfoByAnilibriaID(id string) (model.Anime, error) {
 	anime.Description = result.Description
 	anime.TotalEpisodes = result.EpisodesTotal
 
-	genres := make([]model.ConsumetGenre, len(result.Genres))
+	genres := make([]string, len(result.Genres))
 	for i, g := range result.Genres {
-		genres[i] = model.ConsumetGenre{
-			Name: g.Name,
-		}
+		genres[i] = g.Name
 	}
 	anime.Genres = genres
 
@@ -136,7 +155,7 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 	return episode, nil
 }
 
-func (r *AnimeRepo) GetConsumetEpisodeInfo(id string) (model.Episode, error) {
+func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model.Episode, error) {
 	episode, exists, err := getEpisode(r.dbPostgres, id)
 	if err != nil {
 		fmt.Printf("Error getEpisode from db: %s", err)
@@ -144,16 +163,27 @@ func (r *AnimeRepo) GetConsumetEpisodeInfo(id string) (model.Episode, error) {
 	if exists {
 		return episode, nil
 	}
+
 	url := fmt.Sprintf("https://consumet-caou.onrender.com/anime/zoro/watch?episodeId=%s", id)
 	var result model.ConsumetEpisode
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Episode{}, err
 	}
 
+	finalTitle := result.Title
+	if title != "" {
+		finalTitle = title
+	}
+
+	finalOrdinal := result.Ordinal
+	if ordinal != -1 {
+		finalOrdinal = ordinal
+	}
+
 	episode = model.Episode{
-		ID:      result.ID,
-		Title:   result.Title,
-		Ordinal: result.Ordinal,
+		ID:      id,
+		Title:   finalTitle,
+		Ordinal: finalOrdinal,
 		Opening: model.TimeSegment{
 			Start: result.Intro.Start,
 			End:   result.Intro.End,
@@ -245,7 +275,7 @@ func (r *AnimeRepo) SearchConsumetRecommendedAnime() ([]model.SearchAnime, error
 	return result, nil
 }
 
-func (r *AnimeRepo) SearchConsumetLatestReleases(limit int) ([]model.SearchAnime, error) {
+func (r *AnimeRepo) SearchConsumetLatestReleases() ([]model.SearchAnime, error) {
 	result, err := fetchConsumetReleases("top-airing")
 	if err != nil {
 		return nil, err
@@ -304,19 +334,12 @@ func (r *AnimeRepo) GetAnilibriaGenres() ([]model.Genre, error) {
 	return result, nil
 }
 
-func (r *AnimeRepo) GetConsumetGenres() ([]model.ConsumetGenre, error) {
+func (r *AnimeRepo) GetConsumetGenres() ([]string, error) {
 	baseURL := "https://consumet-caou.onrender.com/anime/zoro/genre/list"
 
-	var rawResult []string
-	if err := doJSONRequest(baseURL, &rawResult); err != nil {
+	var result []string
+	if err := doJSONRequest(baseURL, &result); err != nil {
 		return nil, err
-	}
-
-	result := make([]model.ConsumetGenre, 0, len(rawResult))
-	for _, name := range rawResult {
-		result = append(result, model.ConsumetGenre{
-			Name: name,
-		})
 	}
 
 	return result, nil
@@ -339,7 +362,7 @@ func (r *AnimeRepo) SearchAnilibriaGenreReleases(genreID, limit int) ([]model.Se
 }
 
 func (r *AnimeRepo) SearchConsumetGenreReleases(genre string) ([]model.SearchAnime, error) {
-	result, err := fetchConsumetReleases(genre)
+	result, err := fetchConsumetReleases(fmt.Sprintf("genre/%s", genre))
 	if err != nil {
 		return nil, err
 	}
