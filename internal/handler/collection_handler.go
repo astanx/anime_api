@@ -21,7 +21,7 @@ func NewCollectionHandler(s *service.CollectionService) *CollectionHandler {
 }
 
 func (h *CollectionHandler) AddCollection(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
@@ -45,9 +45,14 @@ func (h *CollectionHandler) AddCollection(c *gin.Context) {
 
 func (h *CollectionHandler) RemoveCollection(c *gin.Context) {
 	var req struct {
-		DeviceID       string `json:"deviceID"`
-		AnimeID        string `json:"animeID"`
-		CollectionType string `json:"collectionType"`
+		AnimeID        string `json:"anime_id"`
+		CollectionType string `json:"type"`
+	}
+
+	deviceID := c.GetString("deviceID")
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
+		return
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -56,12 +61,12 @@ func (h *CollectionHandler) RemoveCollection(c *gin.Context) {
 		return
 	}
 
-	if req.DeviceID == "" || req.AnimeID == "" || req.CollectionType == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID, animeID, and collectionType are required"})
+	if req.AnimeID == "" || req.CollectionType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "anime_id, and type are required"})
 		return
 	}
 
-	if err := h.service.RemoveCollection(req.DeviceID, req.AnimeID, req.CollectionType); err != nil {
+	if err := h.service.RemoveCollection(deviceID, req.AnimeID, req.CollectionType); err != nil {
 		log.Printf("failed to remove collection: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "can't remove collection"})
 		return
@@ -71,7 +76,7 @@ func (h *CollectionHandler) RemoveCollection(c *gin.Context) {
 }
 
 func (h *CollectionHandler) GetAllCollections(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
@@ -88,7 +93,7 @@ func (h *CollectionHandler) GetAllCollections(c *gin.Context) {
 }
 
 func (h *CollectionHandler) GetCollections(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return

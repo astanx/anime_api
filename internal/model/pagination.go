@@ -4,8 +4,8 @@ type PaginationMeta struct {
 	Total      int `json:"total"`
 	Page       int `json:"page"`
 	Limit      int `json:"limit"`
-	PagesLeft  int `json:"pagesLeft"`
-	TotalPages int `json:"totalPages"`
+	PagesLeft  int `json:"pages_left"`
+	TotalPages int `json:"total_pages"`
 }
 
 type PaginatedFavourites struct {

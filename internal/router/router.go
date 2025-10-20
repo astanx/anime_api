@@ -15,6 +15,7 @@ func NewRouter(databases *db.DB) *gin.Engine {
 
 	r.Use(gin.Recovery())
 	r.Use(middleware.Logging())
+	r.Use(middleware.DeviceMiddleware())
 
 	v1 := r.Group("/api/v1")
 	{

@@ -20,18 +20,18 @@ func NewHistoryRepo(db *db.DB) *HistoryRepo {
 
 func (r *HistoryRepo) AddHistory(deviceID string, history model.History) error {
 	_, err := r.db.Exec(
-		`INSERT INTO history (device_id, anime_id, last_watched)
-		 VALUES ($1, $2, $3)
+		`INSERT INTO history (device_id, anime_id, last_watched, is_watched)
+		 VALUES ($1, $2, $3, $4)
 		 ON CONFLICT (device_id, anime_id) DO UPDATE
 		 SET last_watched = EXCLUDED.last_watched`,
-		deviceID, history.AnimeID, history.LastWatchedEpisode,
+		deviceID, history.AnimeID, history.LastWatchedEpisode, history.IsWatched,
 	)
 	return err
 }
 
 func (r *HistoryRepo) GetAllHistory(deviceID string) ([]model.History, error) {
 	rows, err := r.db.Query(
-		"SELECT anime_id, last_watched FROM history WHERE device_id = $1 ORDER BY anime_id",
+		"SELECT anime_id, last_watched, is_watched FROM history WHERE device_id = $1 ORDER BY anime_id",
 		deviceID,
 	)
 	if err != nil {
@@ -68,7 +68,7 @@ func (r *HistoryRepo) GetHistory(deviceID string, page, limit int) (model.Pagina
 	}
 
 	rows, err := r.db.Query(
-		"SELECT anime_id, last_watched FROM history WHERE device_id = $1 ORDER BY anime_id LIMIT $2 OFFSET $3",
+		"SELECT anime_id, last_watched, is_watched FROM history WHERE device_id = $1 ORDER BY anime_id LIMIT $2 OFFSET $3",
 		deviceID, limit, offset,
 	)
 	if err != nil {

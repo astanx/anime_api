@@ -21,7 +21,7 @@ func NewFavouriteHandler(s *service.FavouriteService) *FavouriteHandler {
 }
 
 func (h *FavouriteHandler) AddFavourite(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
@@ -44,12 +44,11 @@ func (h *FavouriteHandler) AddFavourite(c *gin.Context) {
 }
 
 func (h *FavouriteHandler) RemoveFavourite(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
 	}
-
 	var favourite model.Favourite
 	if err := c.ShouldBindJSON(&favourite); err != nil {
 		log.Printf("invalid request body: %v", err)
@@ -67,7 +66,7 @@ func (h *FavouriteHandler) RemoveFavourite(c *gin.Context) {
 }
 
 func (h *FavouriteHandler) GetAllFavourites(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
@@ -84,7 +83,7 @@ func (h *FavouriteHandler) GetAllFavourites(c *gin.Context) {
 }
 
 func (h *FavouriteHandler) GetFavourites(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return

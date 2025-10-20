@@ -21,7 +21,7 @@ func NewHistoryHandler(s *service.HistoryService) *HistoryHandler {
 }
 
 func (h *HistoryHandler) AddHistory(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
@@ -44,7 +44,7 @@ func (h *HistoryHandler) AddHistory(c *gin.Context) {
 }
 
 func (h *HistoryHandler) GetAllHistory(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
@@ -61,7 +61,7 @@ func (h *HistoryHandler) GetAllHistory(c *gin.Context) {
 }
 
 func (h *HistoryHandler) GetHistory(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return

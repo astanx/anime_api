@@ -20,7 +20,7 @@ func NewTimecodeHandler(s *service.TimecodeService) *TimecodeHandler {
 }
 
 func (h *TimecodeHandler) GetAllTimecodes(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
@@ -37,11 +37,15 @@ func (h *TimecodeHandler) GetAllTimecodes(c *gin.Context) {
 }
 
 func (h *TimecodeHandler) GetTimecode(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
+		return
+	}
 	episodeID := c.Query("episodeID")
 
-	if deviceID == "" || episodeID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID and episodeID are required"})
+	if episodeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "episodeID is required"})
 		return
 	}
 
@@ -61,7 +65,7 @@ func (h *TimecodeHandler) GetTimecode(c *gin.Context) {
 }
 
 func (h *TimecodeHandler) AddOrUpdateTimecode(c *gin.Context) {
-	deviceID := c.Query("deviceID")
+	deviceID := c.GetString("deviceID")
 	if deviceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
 		return
