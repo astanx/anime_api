@@ -12,6 +12,13 @@ Anime API is a RESTful API built with Go and the Gin framework, designed to mana
 - **Collections**: Manage user-defined collections of anime.
 - **Middleware**: Logging and device-based authentication for secure access.
 
+### Public URL
+
+The API is publicly hosted and available at:
+https://anime-api-rsc7.onrender.com
+
+All endpoints below should be prefixed with this base URL.
+
 ## API Endpoints
 
 All endpoints are prefixed with `/api/v1`.
