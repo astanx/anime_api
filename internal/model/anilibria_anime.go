@@ -7,9 +7,7 @@ type SearchAnilibriaAnime struct {
 	} `json:"type"`
 	Year   int `json:"year"`
 	Poster struct {
-		Optimized struct {
-			Thumbnail string `json:"thumbnail"`
-		} `json:"optimized"`
+		Src string `json:"src"`
 	} `json:"poster"`
 	Name struct {
 		Main string `json:"main"`
@@ -26,9 +24,7 @@ type AnilibriaAnime struct {
 		Main string `jaon:"main"`
 	} `json:"name"`
 	Poster struct {
-		Optimized struct {
-			Thumbnail string `json:"thumbnail"`
-		} `json:"optimized"`
+		Src string `json:"src"`
 	} `json:"poster"`
 	IsOngoing     bool   `json:"is_ongoing"`
 	Description   string `json:"description"`

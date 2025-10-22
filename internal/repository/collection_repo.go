@@ -24,13 +24,28 @@ func NewCollectionRepo(db *db.DB) *CollectionRepo {
 }
 
 func (r *CollectionRepo) AddCollection(deviceID string, collection model.Collection) error {
-	_, err := r.dbPostgres.Exec(
-		`INSERT INTO collections (device_id, anime_id, name)
-		 VALUES ($1, $2, $3)
-		 ON CONFLICT (device_id, anime_id) DO UPDATE
-		 SET name = EXCLUDED.name`,
-		deviceID, collection.AnimeID, collection.Type,
-	)
+	var exists bool
+	err := r.dbPostgres.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM collections WHERE device_id=$1 AND anime_id=$2)`,
+		deviceID, collection.AnimeID,
+	).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		_, err = r.dbPostgres.Exec(
+			`UPDATE collections
+			 SET type=$1
+			 WHERE device_id=$2 AND anime_id=$3`,
+			collection.Type, deviceID, collection.AnimeID,
+		)
+	} else {
+		_, err = r.dbPostgres.Exec(
+			`INSERT INTO collections (device_id, anime_id, type) VALUES ($1, $2, $3)`,
+			deviceID, collection.AnimeID, collection.Type,
+		)
+	}
 	if err != nil {
 		return err
 	}
@@ -38,9 +53,7 @@ func (r *CollectionRepo) AddCollection(deviceID string, collection model.Collect
 	err = r.dbClickhouse.Exec(
 		context.Background(),
 		`INSERT INTO collection_analytics (anime_id, type, count)
-		 VALUES (?, ?, 1)
-		 ON CONFLICT (anime_id, type) DO UPDATE
-		 SET count = count + 1`,
+		 VALUES (?, ?, 1)`,
 		collection.AnimeID, collection.Type,
 	)
 	if err != nil {
@@ -51,20 +64,29 @@ func (r *CollectionRepo) AddCollection(deviceID string, collection model.Collect
 }
 
 func (r *CollectionRepo) RemoveCollection(deviceID, animeID, collectionType string) error {
-	_, err := r.dbPostgres.Exec(
-		"DELETE FROM collections WHERE device_id = $1 AND anime_id = $2",
+	var exists bool
+	err := r.dbPostgres.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM collections WHERE device_id=$1 AND anime_id=$2)`,
 		deviceID, animeID,
-	)
+	).Scan(&exists)
 	if err != nil {
 		return err
+	}
+
+	if exists {
+		_, err = r.dbPostgres.Exec(
+			"DELETE FROM collections WHERE device_id = $1 AND anime_id = $2",
+			deviceID, animeID,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = r.dbClickhouse.Exec(
 		context.Background(),
 		`INSERT INTO collection_analytics (anime_id, type, count)
-		 VALUES (?, ?, 0)
-		 ON CONFLICT (anime_id, type) DO UPDATE
-		 SET count = count - 1`,
+		 VALUES (?, ?, -1)`,
 		animeID, collectionType,
 	)
 	if err != nil {
@@ -76,7 +98,7 @@ func (r *CollectionRepo) RemoveCollection(deviceID, animeID, collectionType stri
 
 func (r *CollectionRepo) GetAllCollections(deviceID string) ([]model.Collection, error) {
 	rows, err := r.dbPostgres.Query(
-		"SELECT device_id, anime_id, name FROM collections WHERE device_id = $1",
+		"SELECT anime_id, type FROM collections WHERE device_id = $1",
 		deviceID,
 	)
 	if err != nil {
@@ -84,7 +106,7 @@ func (r *CollectionRepo) GetAllCollections(deviceID string) ([]model.Collection,
 	}
 	defer rows.Close()
 
-	var collections []model.Collection
+	collections := make([]model.Collection, 0)
 	for rows.Next() {
 		var c model.Collection
 		if err := rows.Scan(&c.AnimeID, &c.Type); err != nil {
@@ -100,7 +122,7 @@ func (r *CollectionRepo) GetAllCollections(deviceID string) ([]model.Collection,
 	return collections, nil
 }
 
-func (r *CollectionRepo) GetCollections(deviceID string, page, limit int) (model.PaginatedCollections, error) {
+func (r *CollectionRepo) GetCollections(deviceID, T string, page, limit int) (model.PaginatedCollections, error) {
 	offset := (page - 1) * limit
 
 	var total int
@@ -111,21 +133,19 @@ func (r *CollectionRepo) GetCollections(deviceID string, page, limit int) (model
 	if err != nil {
 		return model.PaginatedCollections{}, err
 	}
-
 	rows, err := r.dbPostgres.Query(
-		`SELECT device_id, anime_id, name
+		`SELECT anime_id, type
 		 FROM collections
-		 WHERE device_id = $1
-		 ORDER BY anime_id
-		 LIMIT $2 OFFSET $3`,
-		deviceID, limit, offset,
+		 WHERE device_id = $1 AND type = $2
+		 LIMIT $3 OFFSET $4`,
+		deviceID, T, limit, offset,
 	)
 	if err != nil {
 		return model.PaginatedCollections{}, err
 	}
 	defer rows.Close()
 
-	var collections []model.Collection
+	collections := make([]model.Collection, 0)
 	for rows.Next() {
 		var c model.Collection
 		if err := rows.Scan(&c.AnimeID, &c.Type); err != nil {

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type DB struct {
@@ -16,7 +16,7 @@ type DB struct {
 }
 
 func Connect(postgresDSN, clickhouseUser, clickhousePass, clickhouseHost string) (*DB, error) {
-	pg, err := sql.Open("postgres", postgresDSN)
+	pg, err := sql.Open("pgx", postgresDSN)
 	if err != nil {
 		return nil, err
 	}

@@ -24,3 +24,7 @@ func (s *TimecodeService) GetTimecode(deviceID, episodeID string) (*model.Timeco
 func (s *TimecodeService) AddOrUpdateTimecode(deviceID string, timecode model.Timecode) error {
 	return s.repo.AddTimecode(deviceID, timecode)
 }
+
+func (s *TimecodeService) GetTimecodesForAnime(deviceID, animeID string) ([]model.Timecode, error) {
+	return s.repo.GetTimecodesForAnime(deviceID, animeID)
+}

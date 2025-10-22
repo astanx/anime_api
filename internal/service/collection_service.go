@@ -25,6 +25,6 @@ func (s *CollectionService) GetAllCollections(deviceID string) ([]model.Collecti
 	return s.repo.GetAllCollections(deviceID)
 }
 
-func (s *CollectionService) GetCollections(deviceID string, page, limit int) (model.PaginatedCollections, error) {
-	return s.repo.GetCollections(deviceID, page, limit)
+func (s *CollectionService) GetCollections(deviceID, T string, page, limit int) (model.PaginatedCollections, error) {
+	return s.repo.GetCollections(deviceID, T, page, limit)
 }

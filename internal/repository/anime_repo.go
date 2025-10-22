@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/astanx/anime_api/internal/config"
 	"github.com/astanx/anime_api/internal/db"
 	"github.com/astanx/anime_api/internal/model"
 )
@@ -33,7 +34,7 @@ func (r *AnimeRepo) SearchAnimeByID(id string) (model.SearchAnime, error) {
 }
 
 func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
-	url := fmt.Sprintf("https://consumet-caou.onrender.com/anime/zoro/info?id=%s", id)
+	url := fmt.Sprintf("%s/anime/zoro/info?id=%s", config.ConsumetUrl, id)
 	var result model.ConsumetAnime
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Anime{}, err
@@ -63,7 +64,7 @@ func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 }
 
 func (r *AnimeRepo) GetAnimeInfoByAnilibriaID(id string) (model.Anime, error) {
-	url := fmt.Sprintf("https://aniliberty.top/api/v1/anime/releases/%s?include=id,type.value,year,name.main,poster.optimized.thumbnail,is_ongoing,description,episodes_total,genres.name,episodes", id)
+	url := fmt.Sprintf("https://aniliberty.top/api/v1/anime/releases/%s?include=id,type.value,year,name.main,poster.src,is_ongoing,description,episodes_total,genres.name,episodes", id)
 	var result model.AnilibriaAnime
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Anime{}, err
@@ -73,7 +74,8 @@ func (r *AnimeRepo) GetAnimeInfoByAnilibriaID(id string) (model.Anime, error) {
 	anime.ID = fmt.Sprintf("%d", result.ID)
 	anime.Title = result.Name.Main
 	anime.Year = result.Year
-	anime.Poster = result.Poster.Optimized.Thumbnail
+	anime.Poster =
+		fmt.Sprintf("https://aniliberty.top%s", result.Poster.Src)
 	anime.Type = result.Type.Value
 	anime.Status = "Completed"
 	if result.IsOngoing {
@@ -164,7 +166,7 @@ func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model
 		return episode, nil
 	}
 
-	url := fmt.Sprintf("https://consumet-caou.onrender.com/anime/zoro/watch?episodeId=%s", id)
+	url := fmt.Sprintf("%s/anime/zoro/watch?episodeId=%s", config.ConsumetUrl, id)
 	var result model.ConsumetEpisode
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Episode{}, err
@@ -207,7 +209,7 @@ func (r *AnimeRepo) SearchConsumetAnime(query string) ([]model.SearchAnime, erro
 		return nil, err
 	}
 
-	var result []model.SearchAnime
+	result := make([]model.SearchAnime, 0)
 	for _, a := range rawResult {
 		anime := model.SearchAnime{
 			ID:         a.ID,
@@ -244,7 +246,7 @@ func (r *AnimeRepo) SearchAnilibriaAnime(query string) ([]model.SearchAnime, err
 }
 
 func (r *AnimeRepo) SearchAnilibriaRecommendedAnime(limit int) ([]model.SearchAnime, error) {
-	result, err := fetchAnilibriaReleases("releases/recommended", "", limit)
+	result, err := fetchAnilibriaReleases("anime/releases/recommended", "", limit)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +337,7 @@ func (r *AnimeRepo) GetAnilibriaGenres() ([]model.Genre, error) {
 }
 
 func (r *AnimeRepo) GetConsumetGenres() ([]string, error) {
-	baseURL := "https://consumet-caou.onrender.com/anime/zoro/genre/list"
+	baseURL := fmt.Sprintf("%s/anime/zoro/genre/list", config.ConsumetUrl)
 
 	var result []string
 	if err := doJSONRequest(baseURL, &result); err != nil {

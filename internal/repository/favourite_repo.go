@@ -24,10 +24,23 @@ func NewFavouriteRepo(db *db.DB) *FavouriteRepo {
 }
 
 func (r *FavouriteRepo) AddFavourite(deviceID string, favourite model.Favourite) error {
-	_, err := r.dbPostgres.Exec(
-		"INSERT INTO favourites (device_id, anime_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+	var exists bool
+	err := r.dbPostgres.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM favourites WHERE device_id=$1 AND anime_id=$2)`,
 		deviceID, favourite.AnimeID,
-	)
+	).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return nil
+	} else {
+		_, err = r.dbPostgres.Exec(
+			`INSERT INTO favourites (device_id, anime_id) VALUES ($1, $2)`,
+			deviceID, favourite.AnimeID,
+		)
+	}
 	if err != nil {
 		return err
 	}
@@ -36,9 +49,7 @@ func (r *FavouriteRepo) AddFavourite(deviceID string, favourite model.Favourite)
 		context.Background(),
 		`
 		INSERT INTO favourite_analytics (anime_id, favourites)
-		VALUES (?, 1)
-		ON CONFLICT (anime_id) DO UPDATE
-		SET favourites = favourites + 1
+		ALUES (?, 1)
 		`,
 		favourite.AnimeID,
 	)
@@ -62,9 +73,7 @@ func (r *FavouriteRepo) RemoveFavourite(deviceID string, favourite model.Favouri
 		context.Background(),
 		`
 		INSERT INTO favourite_analytics (anime_id, favourites)
-		VALUES (?, 0)
-		ON CONFLICT (anime_id) DO UPDATE
-		SET favourites = favourites - 1
+		VALUES (?, -1)
 		`,
 		favourite.AnimeID,
 	)
@@ -85,7 +94,7 @@ func (r *FavouriteRepo) GetAllFavourites(deviceID string) ([]model.Favourite, er
 	}
 	defer rows.Close()
 
-	var favourites []model.Favourite
+	favourites := make([]model.Favourite, 0)
 	for rows.Next() {
 		var f model.Favourite
 		if err := rows.Scan(&f.AnimeID); err != nil {
@@ -114,7 +123,7 @@ func (r *FavouriteRepo) GetFavourites(deviceID string, page, limit int) (model.P
 	}
 
 	rows, err := r.dbPostgres.Query(
-		"SELECT device_id, anime_id FROM favourites WHERE device_id = $1 ORDER BY anime_id LIMIT $2 OFFSET $3",
+		"SELECT anime_id FROM favourites WHERE device_id = $1 LIMIT $2 OFFSET $3",
 		deviceID, limit, offset,
 	)
 	if err != nil {
@@ -122,7 +131,7 @@ func (r *FavouriteRepo) GetFavourites(deviceID string, page, limit int) (model.P
 	}
 	defer rows.Close()
 
-	var favourites []model.Favourite
+	favourites := make([]model.Favourite, 0)
 	for rows.Next() {
 		var f model.Favourite
 		if err := rows.Scan(&f.AnimeID); err != nil {

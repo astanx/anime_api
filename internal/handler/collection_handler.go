@@ -99,6 +99,11 @@ func (h *CollectionHandler) GetCollections(c *gin.Context) {
 		return
 	}
 
+	T := c.Query("type")
+	if T == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "type query is required"})
+		return
+	}
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
 
@@ -114,7 +119,7 @@ func (h *CollectionHandler) GetCollections(c *gin.Context) {
 		return
 	}
 
-	collections, err := h.service.GetCollections(deviceID, page, limit)
+	collections, err := h.service.GetCollections(deviceID, T, page, limit)
 	if err != nil {
 		log.Printf("failed to get paginated collections: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "can't get collections"})

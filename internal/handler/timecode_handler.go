@@ -86,3 +86,31 @@ func (h *TimecodeHandler) AddOrUpdateTimecode(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (h *TimecodeHandler) GetTimecodesForAnime(c *gin.Context) {
+	deviceID := c.GetString("deviceID")
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
+		return
+	}
+	animeID := c.Query("animeID")
+
+	if animeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "animeID is required"})
+		return
+	}
+
+	timecodes, err := h.service.GetTimecodesForAnime(deviceID, animeID)
+	if err != nil {
+		log.Printf("failed to get timecode: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "can't get timecodes"})
+		return
+	}
+
+	if timecodes == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "timecodes not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, timecodes)
+}

@@ -38,6 +38,7 @@ func NewRouter(databases *db.DB) *gin.Engine {
 			timecodes := authV1.Group("/timecode")
 			{
 				timecodes.GET("", timecodeHandler.GetTimecode)
+				timecodes.GET("/anime", timecodeHandler.GetTimecodesForAnime)
 				timecodes.GET("/all", timecodeHandler.GetAllTimecodes)
 				timecodes.POST("", timecodeHandler.AddOrUpdateTimecode)
 			}

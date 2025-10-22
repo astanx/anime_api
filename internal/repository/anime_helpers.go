@@ -10,6 +10,7 @@ import (
 	"net/http"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/astanx/anime_api/internal/config"
 	"github.com/astanx/anime_api/internal/model"
 )
 
@@ -42,7 +43,7 @@ func doJSONRequest(url string, target any) error {
 }
 
 func fetchConsumet(endpoint string) ([]model.SearchAnime, error) {
-	url := fmt.Sprintf("https://consumet-caou.onrender.com/anime/zoro/%s", endpoint)
+	url := fmt.Sprintf("%s/anime/zoro/%s", config.ConsumetUrl, endpoint)
 	var res struct {
 		Results []model.SearchAnime `json:"results"`
 	}
@@ -53,7 +54,7 @@ func fetchConsumet(endpoint string) ([]model.SearchAnime, error) {
 }
 
 func fetchAnilibriaReleases(endpoint string, query string, limit int) ([]model.SearchAnime, error) {
-	baseURL := fmt.Sprintf("https://aniliberty.top/api/v1/%s?include=id,type.value,year,poster.optimized.thumbnail,name.main", endpoint)
+	baseURL := fmt.Sprintf("https://aniliberty.top/api/v1/%s?include=id,type.value,year,poster.src,name.main", endpoint)
 
 	if query != "" {
 		baseURL += fmt.Sprintf("&query=%s", query)
@@ -72,7 +73,7 @@ func fetchAnilibriaReleases(endpoint string, query string, limit int) ([]model.S
 		result = append(result, model.SearchAnime{
 			ID:         fmt.Sprint(a.ID),
 			Title:      a.Name.Main,
-			Poster:     fmt.Sprintf("https://aniliberty.top%s", a.Poster.Optimized.Thumbnail),
+			Poster:     fmt.Sprintf("https://aniliberty.top%s", a.Poster.Src),
 			Year:       a.Year,
 			Type:       a.Type.Value,
 			ParserType: "Anilibria",
@@ -83,7 +84,7 @@ func fetchAnilibriaReleases(endpoint string, query string, limit int) ([]model.S
 }
 
 func fetchConsumetReleases(endpoint string) ([]model.SearchAnime, error) {
-	baseURL := fmt.Sprintf("https://consumet-caou.onrender.com/anime/zoro/%s", endpoint)
+	baseURL := fmt.Sprintf("%s/anime/zoro/%s", config.ConsumetUrl, endpoint)
 
 	var rawResult struct {
 		Results []model.SearchAnime `json:"results"`
