@@ -13,6 +13,7 @@ type Config struct {
 	ClickhouseUser string
 	ClickhouseHost string
 	ClickhousePass string
+	RedisURL       string
 }
 
 func LoadConfig() (*Config, error) {
@@ -31,5 +32,6 @@ func LoadConfig() (*Config, error) {
 		ClickhouseUser: os.Getenv("CLICKHOUSE_USERNAME"),
 		ClickhouseHost: os.Getenv("CLICKHOUSE_HOST"),
 		ClickhousePass: os.Getenv("CLICKHOUSE_PASSWORD"),
+		RedisURL:       os.Getenv("REDIS_URL"),
 	}, nil
 }

@@ -1,39 +1,67 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"time"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/astanx/anime_api/internal/config"
 	"github.com/astanx/anime_api/internal/db"
 	"github.com/astanx/anime_api/internal/model"
+	"github.com/redis/go-redis/v9"
 )
 
 type AnimeRepo struct {
 	dbPostgres   *sql.DB
 	dbClickhouse clickhouse.Conn
+	dbRedis      *redis.Client
 }
 
 func NewAnimeRepo(db *db.DB) *AnimeRepo {
 	return &AnimeRepo{
 		dbPostgres:   db.Postgres,
 		dbClickhouse: db.ClickHouse,
+		dbRedis:      db.Redis,
 	}
 }
 
 func (r *AnimeRepo) SearchAnimeByID(id string) (model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:search:id:%s", id)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime model.SearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	row := r.dbPostgres.QueryRow("SELECT id, title, year, poster, type, parser_type FROM search WHERE id = $1", id)
 	var anime model.SearchAnime
-	err := row.Scan(&anime.ID, &anime.Title, &anime.Year, &anime.Poster, &anime.Type, &anime.ParserType)
+	err = row.Scan(&anime.ID, &anime.Title, &anime.Year, &anime.Poster, &anime.Type, &anime.ParserType)
 	if err != nil {
 		return model.SearchAnime{}, err
 	}
+	animeJSON, _ := json.Marshal(anime)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 1*time.Hour)
 
 	return anime, nil
 }
 
 func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:consumet:id:%s", id)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime model.Anime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	url := fmt.Sprintf("%s/anime/zoro/info?id=%s", config.ConsumetUrl, id)
 	var result model.ConsumetAnime
 	if err := doJSONRequest(url, &result); err != nil {
@@ -60,10 +88,23 @@ func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 			return episodes
 		}(),
 	}
+	animeJSON, _ := json.Marshal(anime)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 1*time.Hour)
+
 	return anime, nil
 }
 
 func (r *AnimeRepo) GetAnimeInfoByAnilibriaID(id string) (model.Anime, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:anilibria:id:%s", id)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime model.Anime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	url := fmt.Sprintf("https://aniliberty.top/api/v1/anime/releases/%s?include=id,type.value,year,name.main,poster.src,is_ongoing,description,episodes_total,genres.name,episodes", id)
 	var result model.AnilibriaAnime
 	if err := doJSONRequest(url, &result); err != nil {
@@ -100,10 +141,23 @@ func (r *AnimeRepo) GetAnimeInfoByAnilibriaID(id string) (model.Anime, error) {
 	}
 	anime.Episodes = episodes
 
+	animeJSON, _ := json.Marshal(anime)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 1*time.Hour)
+
 	return anime, nil
 }
 
 func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:anilibria:episode:id:%s", id)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var episode model.Episode
+		if err := json.Unmarshal([]byte(cached), &episode); err == nil {
+			return episode, nil
+		}
+	}
 	episode, exists, err := getEpisode(r.dbPostgres, id)
 	if err != nil {
 		fmt.Printf("Error getEpisode from db: %s", err)
@@ -154,10 +208,23 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 
 	insertEpisode(r.dbPostgres, episode)
 
+	episodeJSON, _ := json.Marshal(episode)
+	r.dbRedis.Set(ctx, cacheKey, episodeJSON, 1*time.Hour)
+
 	return episode, nil
 }
 
 func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model.Episode, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:consumet:episode:id:%s", id)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var episode model.Episode
+		if err := json.Unmarshal([]byte(cached), &episode); err == nil {
+			return episode, nil
+		}
+	}
 	episode, exists, err := getEpisode(r.dbPostgres, id)
 	if err != nil {
 		fmt.Printf("Error getEpisode from db: %s", err)
@@ -200,10 +267,23 @@ func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model
 
 	insertEpisode(r.dbPostgres, episode)
 
+	episodeJSON, _ := json.Marshal(episode)
+	r.dbRedis.Set(ctx, cacheKey, episodeJSON, 1*time.Hour)
+
 	return episode, nil
 }
 
 func (r *AnimeRepo) SearchConsumetAnime(query string) ([]model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:search:consumet:query:%s", query)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime []model.SearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	rawResult, err := fetchConsumet(query)
 	if err != nil {
 		return nil, err
@@ -226,10 +306,24 @@ func (r *AnimeRepo) SearchConsumetAnime(query string) ([]model.SearchAnime, erro
 	}
 
 	logSearchClickhouse(r.dbClickhouse, query, "consumet", len(result))
+
+	animeJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+
 	return result, nil
 }
 
 func (r *AnimeRepo) SearchAnilibriaAnime(query string) ([]model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:search:anilibria:query:%s", query)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime []model.SearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	result, err := fetchAnilibriaReleases("app/search/releases", query, 0)
 	if err != nil {
 		return nil, err
@@ -242,10 +336,24 @@ func (r *AnimeRepo) SearchAnilibriaAnime(query string) ([]model.SearchAnime, err
 	}
 
 	logSearchClickhouse(r.dbClickhouse, query, "anilibria", len(result))
+
+	animeJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+
 	return result, nil
 }
 
 func (r *AnimeRepo) SearchAnilibriaRecommendedAnime(limit int) ([]model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:search:anilibria:recommended:limit:%d", limit)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime []model.SearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	result, err := fetchAnilibriaReleases("anime/releases/recommended", "", limit)
 	if err != nil {
 		return nil, err
@@ -258,10 +366,24 @@ func (r *AnimeRepo) SearchAnilibriaRecommendedAnime(limit int) ([]model.SearchAn
 	}
 
 	logSearchClickhouse(r.dbClickhouse, "recommended", "anilibria", len(result))
+
+	animeJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+
 	return result, nil
 }
 
 func (r *AnimeRepo) SearchConsumetRecommendedAnime() ([]model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := "anime:search:consumet:recommended"
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime []model.SearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	result, err := fetchConsumetReleases("most-popular")
 	if err != nil {
 		return nil, err
@@ -274,10 +396,25 @@ func (r *AnimeRepo) SearchConsumetRecommendedAnime() ([]model.SearchAnime, error
 	}
 
 	logSearchClickhouse(r.dbClickhouse, "recommended", "consumet", len(result))
+
+	animeJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+
 	return result, nil
 }
 
 func (r *AnimeRepo) SearchConsumetLatestReleases() ([]model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := "anime:search:consumet:latest"
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime []model.SearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
+
 	result, err := fetchConsumetReleases("top-airing")
 	if err != nil {
 		return nil, err
@@ -290,10 +427,24 @@ func (r *AnimeRepo) SearchConsumetLatestReleases() ([]model.SearchAnime, error) 
 	}
 
 	logSearchClickhouse(r.dbClickhouse, "latest", "consumet", len(result))
+
+	animeJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+
 	return result, nil
 }
 
 func (r *AnimeRepo) SearchAnilibriaLatestReleases(limit int) ([]model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := "anime:search:anilibria:latest"
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime []model.SearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
 	result, err := fetchAnilibriaReleases("anime/releases/latest", "", limit)
 	if err != nil {
 		return nil, err
@@ -306,6 +457,9 @@ func (r *AnimeRepo) SearchAnilibriaLatestReleases(limit int) ([]model.SearchAnim
 	}
 
 	logSearchClickhouse(r.dbClickhouse, "latest", "anilibria", len(result))
+
+	animeJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
 	return result, nil
 }
 
@@ -326,6 +480,16 @@ func (r *AnimeRepo) SearchAnilibriaRandomReleases(limit int) ([]model.SearchAnim
 }
 
 func (r *AnimeRepo) GetAnilibriaGenres() ([]model.Genre, error) {
+	ctx := context.Background()
+	cacheKey := "anime:anilibria:genres"
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var genres []model.Genre
+		if err := json.Unmarshal([]byte(cached), &genres); err == nil {
+			return genres, nil
+		}
+	}
 	baseURL := "https://aniliberty.top/api/v1/anime/genres?include=id,name,total_releases"
 
 	var result []model.Genre
@@ -333,16 +497,31 @@ func (r *AnimeRepo) GetAnilibriaGenres() ([]model.Genre, error) {
 		return nil, err
 	}
 
+	genreJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, genreJSON, 24*time.Hour)
+
 	return result, nil
 }
 
 func (r *AnimeRepo) GetConsumetGenres() ([]string, error) {
+	ctx := context.Background()
+	cacheKey := "anime:consumet:genres"
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var genres []string
+		if err := json.Unmarshal([]byte(cached), &genres); err == nil {
+			return genres, nil
+		}
+	}
 	baseURL := fmt.Sprintf("%s/anime/zoro/genre/list", config.ConsumetUrl)
 
 	var result []string
 	if err := doJSONRequest(baseURL, &result); err != nil {
 		return nil, err
 	}
+	genreJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, genreJSON, 24*time.Hour)
 
 	return result, nil
 }

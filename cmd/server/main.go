@@ -14,7 +14,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	databases, err := db.Connect(cfg.PostgresDSN, cfg.ClickhouseUser, cfg.ClickhousePass, cfg.ClickhouseHost)
+	databases, err := db.Connect(cfg.PostgresDSN, cfg.ClickhouseUser, cfg.ClickhousePass, cfg.ClickhouseHost, cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("failed to connect databases: %v", err)
 	}
