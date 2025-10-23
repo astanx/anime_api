@@ -18,6 +18,47 @@ The API is publicly hosted and available at:
 https://anime-api-rsc7.onrender.com
 
 All endpoints below should be prefixed with this base URL.
+Absolutely! Since your API uses a **device-based authentication** system via the `DeviceMiddleware`, we can clearly document the **auth flow**, how to provide the device ID, and how it interacts with requests. Here's a polished version you can add to your API docs:
+
+---
+
+## Authentication
+
+### Overview
+
+The API uses **device-based authentication**. Each user/device is identified by a unique **device ID**, which is required for most endpoints except `/users/device`. This allows tracking user-specific data such as favorites, watch history, and timecodes without traditional user accounts.
+
+### Obtaining a Device ID
+
+1. **Endpoint:** `POST /users/device`
+2. **Description:** Generates a new device ID for the user.
+3. **Request Body:** None
+4. **Response:**
+
+```json
+{
+  "id": "<device-uuid>"
+}
+```
+
+5. **Errors:**
+
+   * `400 Bad Request`: If device creation fails.
+
+### Using the Device ID
+
+* Include the device ID in the `Authorization` header with the prefix `Device `.
+* Example:
+
+```
+Authorization: Device 123e4567-e89b-12d3-a456-426614174000
+```
+
+### Header Requirements
+
+| Header        | Value Format         | Required                                      |
+| ------------- | -------------------- | --------------------------------------------- |
+| Authorization | `Device <device-id>` | For all endpoints except `/users/device` |
 
 ## API Endpoints
 
@@ -254,12 +295,6 @@ Requires `DeviceMiddleware` for authentication.
   - Errors:
     - `400 Bad Request`: Missing deviceID.
     - `500 Internal Server Error`: Failed to fetch collections.
-
-## Authentication
-
-- Most endpoints (except `/users/device`) require a device ID, enforced by `DeviceMiddleware`.
-- The device ID must be included in requests, typically set in the context by the middleware.
-- Obtain a device ID by calling `POST /users/device`.
 
 ## Error Handling
 
