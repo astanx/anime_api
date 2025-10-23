@@ -32,13 +32,13 @@ func (r *HistoryRepo) AddHistory(deviceID string, history model.History) error {
 	if exists {
 		_, err = r.db.Exec(
 			`UPDATE history
-             SET last_watched=$1, is_watched=$2
+             SET last_watched=$1, is_watched=$2, watched_at=now()
              WHERE device_id=$3 AND anime_id=$4`,
 			history.LastWatchedEpisode, history.IsWatched, deviceID, history.AnimeID,
 		)
 	} else {
 		_, err = r.db.Exec(
-			`INSERT INTO history (device_id, anime_id, last_watched, is_watched) VALUES ($1, $2, $3, $4)`,
+			`INSERT INTO history (device_id, anime_id, last_watched, is_watched, watched_at) VALUES ($1, $2, $3, $4, now())`,
 			deviceID, history.AnimeID, history.LastWatchedEpisode, history.IsWatched,
 		)
 	}
@@ -48,7 +48,7 @@ func (r *HistoryRepo) AddHistory(deviceID string, history model.History) error {
 
 func (r *HistoryRepo) GetAllHistory(deviceID string) ([]model.History, error) {
 	rows, err := r.db.Query(
-		"SELECT anime_id, last_watched, is_watched FROM history WHERE device_id = $1 ORDER BY anime_id",
+		"SELECT anime_id, last_watched, is_watched, watched_at FROM history WHERE device_id = $1 ORDER BY watched_at",
 		deviceID,
 	)
 	if err != nil {
@@ -59,7 +59,7 @@ func (r *HistoryRepo) GetAllHistory(deviceID string) ([]model.History, error) {
 	historyList := make([]model.History, 0)
 	for rows.Next() {
 		var h model.History
-		if err := rows.Scan(&h.AnimeID, &h.LastWatchedEpisode, &h.IsWatched); err != nil {
+		if err := rows.Scan(&h.AnimeID, &h.LastWatchedEpisode, &h.IsWatched, &h.WatchedAt); err != nil {
 			return nil, err
 		}
 		historyList = append(historyList, h)
@@ -84,7 +84,7 @@ func (r *HistoryRepo) GetHistory(deviceID string, page, limit int) (model.Pagina
 		return model.PaginatedHistory{}, err
 	}
 
-	query := "SELECT anime_id, last_watched, is_watched FROM history WHERE device_id = $1 ORDER BY anime_id LIMIT $2 OFFSET $3"
+	query := "SELECT anime_id, last_watched, is_watched, watched_at FROM history WHERE device_id = $1 ORDER BY watched_at LIMIT $2 OFFSET $3"
 	rows, err := r.db.Query(query, deviceID, limit, offset)
 	if err != nil {
 		fmt.Printf("Query error: %v\n", err)
@@ -95,7 +95,7 @@ func (r *HistoryRepo) GetHistory(deviceID string, page, limit int) (model.Pagina
 	historyList := make([]model.History, 0)
 	for rows.Next() {
 		var h model.History
-		if err := rows.Scan(&h.AnimeID, &h.LastWatchedEpisode, &h.IsWatched); err != nil {
+		if err := rows.Scan(&h.AnimeID, &h.LastWatchedEpisode, &h.IsWatched, &h.WatchedAt); err != nil {
 			return model.PaginatedHistory{}, err
 		}
 		historyList = append(historyList, h)
