@@ -215,24 +215,6 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 }
 
 func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model.Episode, error) {
-	ctx := context.Background()
-	cacheKey := fmt.Sprintf("anime:consumet:episode:id:%s", id)
-
-	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var episode model.Episode
-		if err := json.Unmarshal([]byte(cached), &episode); err == nil {
-			return episode, nil
-		}
-	}
-	episode, exists, err := getEpisode(r.dbPostgres, id)
-	if err != nil {
-		fmt.Printf("Error getEpisode from db: %s", err)
-	}
-	if exists {
-		return episode, nil
-	}
-
 	url := fmt.Sprintf("%s/anime/zoro/watch?episodeId=%s", config.ConsumetUrl, id)
 	var result model.ConsumetEpisode
 	if err := doJSONRequest(url, &result); err != nil {
@@ -249,7 +231,7 @@ func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model
 		finalOrdinal = ordinal
 	}
 
-	episode = model.Episode{
+	episode := model.Episode{
 		ID:      id,
 		Title:   finalTitle,
 		Ordinal: finalOrdinal,
@@ -264,11 +246,6 @@ func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model
 		Sources:   result.Sources,
 		Subtitles: result.Subtitles,
 	}
-
-	insertEpisode(r.dbPostgres, episode)
-
-	episodeJSON, _ := json.Marshal(episode)
-	r.dbRedis.Set(ctx, cacheKey, episodeJSON, 1*time.Hour)
 
 	return episode, nil
 }
