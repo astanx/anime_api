@@ -14,6 +14,6 @@ func NewDeviceService(repo *repository.DeviceRepo) *DeviceService {
 	return &DeviceService{repo: repo}
 }
 
-func (s *DeviceService) AddDeviceID(deviceID uuid.UUID) (model.User, error) {
-	return s.repo.AddDeviceID(deviceID)
+func (s *DeviceService) AddDeviceID(deviceID uuid.UUID, from string) (model.User, error) {
+	return s.repo.AddDeviceID(deviceID, from)
 }

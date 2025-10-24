@@ -23,12 +23,12 @@ func NewDeviceRepo(db *db.DB) *DeviceRepo {
 	}
 }
 
-func (r *DeviceRepo) AddDeviceID(deviceID uuid.UUID) (model.User, error) {
+func (r *DeviceRepo) AddDeviceID(deviceID uuid.UUID, from string) (model.User, error) {
 	var u model.User
 
 	err := r.dbPostgres.QueryRow(
-		"INSERT INTO devices (device_id) VALUES ($1) RETURNING device_id",
-		deviceID,
+		"INSERT INTO devices (device_id, created_from) VALUES ($1, $2) RETURNING device_id",
+		deviceID, from,
 	).Scan(&u.ID)
 	if err != nil {
 		return u, err
@@ -36,8 +36,8 @@ func (r *DeviceRepo) AddDeviceID(deviceID uuid.UUID) (model.User, error) {
 
 	err = r.dbClickhouse.Exec(
 		context.Background(),
-		"INSERT INTO device_analytics (device_id, created_at) VALUES (?, now())",
-		deviceID,
+		"INSERT INTO device_analytics (device_id, from, created_at) VALUES (?, ?, now())",
+		deviceID, from,
 	)
 	if err != nil {
 		log.Println("ClickHouse insert failed:", err)

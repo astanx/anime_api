@@ -21,8 +21,9 @@ func NewDeviceHandler(s *service.DeviceService) *DeviceHandler {
 }
 func (h *DeviceHandler) AddDeviceID(c *gin.Context) {
 	deviceId := uuid.New()
+	from := c.DefaultQuery("from", "api")
 
-	_, err := h.service.AddDeviceID(deviceId)
+	_, err := h.service.AddDeviceID(deviceId, from)
 	if err != nil {
 		log.Printf("failed to add device: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "can't add device"})
