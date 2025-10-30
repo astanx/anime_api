@@ -28,3 +28,7 @@ func (s *FavouriteService) GetAllFavourites(deviceID string) ([]model.Favourite,
 func (s *FavouriteService) GetFavourites(deviceID string, page, limit int) (model.PaginatedFavourites, error) {
 	return s.repo.GetFavourites(deviceID, page, limit)
 }
+
+func (s *FavouriteService) GetFavouriteForAnime(deviceID, animeID string) (model.Favourite, error) {
+	return s.repo.GetFavouriteForAnime(deviceID, animeID)
+}

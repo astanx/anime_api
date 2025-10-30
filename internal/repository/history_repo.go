@@ -48,7 +48,7 @@ func (r *HistoryRepo) AddHistory(deviceID string, history model.History) error {
 
 func (r *HistoryRepo) GetAllHistory(deviceID string) ([]model.History, error) {
 	rows, err := r.db.Query(
-		"SELECT anime_id, last_watched, is_watched, watched_at FROM history WHERE device_id = $1 ORDER BY watched_at",
+		"SELECT anime_id, last_watched, is_watched, watched_at FROM history WHERE device_id = $1 ORDER BY watched_at DESC",
 		deviceID,
 	)
 	if err != nil {
@@ -84,7 +84,7 @@ func (r *HistoryRepo) GetHistory(deviceID string, page, limit int) (model.Pagina
 		return model.PaginatedHistory{}, err
 	}
 
-	query := "SELECT anime_id, last_watched, is_watched, watched_at FROM history WHERE device_id = $1 ORDER BY watched_at LIMIT $2 OFFSET $3"
+	query := "SELECT anime_id, last_watched, is_watched, watched_at FROM history WHERE device_id = $1 ORDER BY watched_at DESC LIMIT $2 OFFSET $3"
 	rows, err := r.db.Query(query, deviceID, limit, offset)
 	if err != nil {
 		fmt.Printf("Query error: %v\n", err)

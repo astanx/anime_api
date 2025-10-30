@@ -77,6 +77,6 @@ func (s *AnimeService) GetAnilibriaEpisodeInfo(id string) (model.Episode, error)
 	return s.repo.GetAnilibriaEpisodeInfo(id)
 }
 
-func (s *AnimeService) GetConsumetEpisodeInfo(id string, title string, ordinal int) (model.Episode, error) {
-	return s.repo.GetConsumetEpisodeInfo(id, title, ordinal)
+func (s *AnimeService) GetConsumetEpisodeInfo(id string, title string, ordinal int, dub string) (model.Episode, error) {
+	return s.repo.GetConsumetEpisodeInfo(id, title, ordinal, dub)
 }

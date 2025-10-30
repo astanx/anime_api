@@ -98,7 +98,7 @@ func (r *CollectionRepo) RemoveCollection(deviceID, animeID, collectionType stri
 
 func (r *CollectionRepo) GetAllCollections(deviceID string) ([]model.Collection, error) {
 	rows, err := r.dbPostgres.Query(
-		"SELECT anime_id, type FROM collections WHERE device_id = $1",
+		"SELECT anime_id, type FROM collections WHERE device_id = $1 ORDER BY id DESC",
 		deviceID,
 	)
 	if err != nil {
@@ -137,6 +137,7 @@ func (r *CollectionRepo) GetCollections(deviceID, T string, page, limit int) (mo
 		`SELECT anime_id, type
 		 FROM collections
 		 WHERE device_id = $1 AND type = $2
+		 ORDER BY id DESC
 		 LIMIT $3 OFFSET $4`,
 		deviceID, T, limit, offset,
 	)
@@ -171,4 +172,29 @@ func (r *CollectionRepo) GetCollections(deviceID, T string, page, limit int) (mo
 			PagesLeft:  pagesLeft,
 		},
 	}, nil
+}
+
+func (r *CollectionRepo) GetCollectionForAnime(deviceID, animeID string) (model.Collection, error) {
+	var exists bool
+	err := r.dbPostgres.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM collections WHERE device_id=$1 AND anime_id=$2)`,
+		deviceID, animeID,
+	).Scan(&exists)
+	if err != nil {
+		return model.Collection{}, err
+	}
+
+	if !exists {
+		return model.Collection{}, nil
+	}
+	var collection model.Collection
+	err = r.dbPostgres.QueryRow(
+		`SELECT anime_id, type FROM collections WHERE device_id=$1 AND anime_id=$2`,
+		deviceID, animeID,
+	).Scan(&collection.AnimeID, &collection.Type)
+	if err != nil {
+		return model.Collection{}, err
+	}
+
+	return collection, nil
 }

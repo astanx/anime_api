@@ -267,6 +267,8 @@ func (h *AnimeHandler) GetConsumetEpisodeInfo(c *gin.Context) {
 	}
 	title := c.Query("title")
 	ordinalStr := c.Query("ordinal")
+	dub := c.DefaultQuery("dub", "false")
+
 	var ordinal int
 	if ordinalStr == "" {
 		ordinal = -1
@@ -280,7 +282,7 @@ func (h *AnimeHandler) GetConsumetEpisodeInfo(c *gin.Context) {
 		}
 	}
 
-	episode, err := h.service.GetConsumetEpisodeInfo(id, title, ordinal)
+	episode, err := h.service.GetConsumetEpisodeInfo(id, title, ordinal, dub)
 	if err != nil {
 		log.Printf("GetConsumetEpisodeInfo: failed to get episode info: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get episode info"})

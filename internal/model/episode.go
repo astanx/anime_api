@@ -1,15 +1,19 @@
 package model
 
 type PreviewEpisode struct {
-	ID      string `json:"id"`
-	Ordinal int    `json:"ordinal"`
-	Title   string `json:"title"`
+	ID       string `json:"id"`
+	Ordinal  int    `json:"ordinal"`
+	IsDubbed bool   `json:"is_dubbed"`
+	IsSubbed bool   `json:"is_subbed"`
+	Title    string `json:"title"`
 }
 
 type PreviewConsumetEpisode struct {
-	ID     string `json:"id"`
-	Number int    `json:"number"`
-	Title  string `json:"title"`
+	ID       string `json:"id"`
+	Number   int    `json:"number"`
+	IsDubbed bool   `json:"isDubbed"`
+	IsSubbed bool   `json:"isSubbed"`
+	Title    string `json:"title"`
 }
 
 type TimeSegment struct {

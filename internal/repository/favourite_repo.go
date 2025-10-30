@@ -86,7 +86,7 @@ func (r *FavouriteRepo) RemoveFavourite(deviceID string, favourite model.Favouri
 
 func (r *FavouriteRepo) GetAllFavourites(deviceID string) ([]model.Favourite, error) {
 	rows, err := r.dbPostgres.Query(
-		"SELECT device_id, anime_id FROM favourites WHERE device_id = $1",
+		"SELECT device_id, anime_id FROM favourites WHERE device_id = $1 ORDER BY id DESC",
 		deviceID,
 	)
 	if err != nil {
@@ -123,7 +123,7 @@ func (r *FavouriteRepo) GetFavourites(deviceID string, page, limit int) (model.P
 	}
 
 	rows, err := r.dbPostgres.Query(
-		"SELECT anime_id FROM favourites WHERE device_id = $1 LIMIT $2 OFFSET $3",
+		"SELECT anime_id FROM favourites WHERE device_id = $1 ORDER BY id DESC LIMIT $2 OFFSET $3",
 		deviceID, limit, offset,
 	)
 	if err != nil {
@@ -157,4 +157,29 @@ func (r *FavouriteRepo) GetFavourites(deviceID string, page, limit int) (model.P
 			PagesLeft:  pagesLeft,
 		},
 	}, nil
+}
+
+func (r *FavouriteRepo) GetFavouriteForAnime(deviceID, animeID string) (model.Favourite, error) {
+	var exists bool
+	err := r.dbPostgres.QueryRow(
+		`SELECT EXISTS(SELECT 1 FROM favourites WHERE device_id=$1 AND anime_id=$2)`,
+		deviceID, animeID,
+	).Scan(&exists)
+	if err != nil {
+		return model.Favourite{}, err
+	}
+
+	if !exists {
+		return model.Favourite{}, nil
+	}
+	var favourite model.Favourite
+	err = r.dbPostgres.QueryRow(
+		`SELECT anime_id FROM favourites WHERE device_id=$1 AND anime_id=$2`,
+		deviceID, animeID,
+	).Scan(&favourite.AnimeID)
+	if err != nil {
+		return model.Favourite{}, err
+	}
+
+	return favourite, nil
 }

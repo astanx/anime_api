@@ -128,3 +128,26 @@ func (h *CollectionHandler) GetCollections(c *gin.Context) {
 
 	c.JSON(http.StatusOK, collections)
 }
+
+func (h *CollectionHandler) GetCollectionForAnime(c *gin.Context) {
+	deviceID := c.GetString("deviceID")
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
+		return
+	}
+
+	animeID := c.Query("animeID")
+	if animeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "animeID query is required"})
+		return
+	}
+
+	collection, err := h.service.GetCollectionForAnime(deviceID, animeID)
+	if err != nil {
+		log.Printf("failed to get collection for anime: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "can't get collection"})
+		return
+	}
+
+	c.JSON(http.StatusOK, collection)
+}

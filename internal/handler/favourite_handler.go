@@ -113,3 +113,26 @@ func (h *FavouriteHandler) GetFavourites(c *gin.Context) {
 
 	c.JSON(http.StatusOK, favourites)
 }
+
+func (h *FavouriteHandler) GetFavouriteForAnime(c *gin.Context) {
+	deviceID := c.GetString("deviceID")
+	if deviceID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "deviceID is required"})
+		return
+	}
+
+	animeID := c.Query("animeID")
+	if animeID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "animeID is required"})
+		return
+	}
+
+	favourite, err := h.service.GetFavouriteForAnime(deviceID, animeID)
+	if err != nil {
+		log.Printf("failed to get favourite for anime: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "can't get favourite"})
+		return
+	}
+
+	c.JSON(http.StatusOK, favourite)
+}

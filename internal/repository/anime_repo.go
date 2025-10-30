@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
@@ -79,10 +80,13 @@ func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 		Episodes: func() []model.PreviewEpisode {
 			episodes := make([]model.PreviewEpisode, len(result.Episodes))
 			for i, e := range result.Episodes {
+				log.Println("Episode:", e)
 				episodes[i] = model.PreviewEpisode{
-					ID:      e.ID,
-					Ordinal: e.Number,
-					Title:   e.Title,
+					ID:       e.ID,
+					IsDubbed: e.IsDubbed,
+					IsSubbed: e.IsSubbed,
+					Ordinal:  e.Number,
+					Title:    e.Title,
 				}
 			}
 			return episodes
@@ -134,9 +138,11 @@ func (r *AnimeRepo) GetAnimeInfoByAnilibriaID(id string) (model.Anime, error) {
 	episodes := make([]model.PreviewEpisode, len(result.Episodes))
 	for i, e := range result.Episodes {
 		episodes[i] = model.PreviewEpisode{
-			ID:      e.ID,
-			Title:   e.Name,
-			Ordinal: e.Ordinal,
+			ID:       e.ID,
+			IsDubbed: true,
+			IsSubbed: false,
+			Title:    e.Name,
+			Ordinal:  e.Ordinal,
 		}
 	}
 	anime.Episodes = episodes
@@ -214,8 +220,8 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 	return episode, nil
 }
 
-func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int) (model.Episode, error) {
-	url := fmt.Sprintf("%s/anime/zoro/watch?episodeId=%s", config.ConsumetUrl, id)
+func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int, dub string) (model.Episode, error) {
+	url := fmt.Sprintf("%s/anime/zoro/watch?episodeId=%s&dub=%s", config.ConsumetUrl, id, dub)
 	var result model.ConsumetEpisode
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Episode{}, err

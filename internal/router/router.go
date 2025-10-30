@@ -66,6 +66,7 @@ func NewRouter(databases *db.DB) *gin.Engine {
 				favourite.DELETE("", favHandler.RemoveFavourite)
 				favourite.GET("", favHandler.GetFavourites)
 				favourite.GET("/all", favHandler.GetAllFavourites)
+				favourite.GET("/anime", favHandler.GetFavouriteForAnime)
 			}
 
 			// Collection routes
@@ -79,6 +80,7 @@ func NewRouter(databases *db.DB) *gin.Engine {
 				collection.DELETE("", collectionHandler.RemoveCollection)
 				collection.GET("", collectionHandler.GetCollections)
 				collection.GET("/all", collectionHandler.GetAllCollections)
+				collection.GET("/anime", collectionHandler.GetCollectionForAnime)
 			}
 
 			// Anime routes
