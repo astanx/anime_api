@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"time"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
@@ -80,7 +79,6 @@ func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 		Episodes: func() []model.PreviewEpisode {
 			episodes := make([]model.PreviewEpisode, len(result.Episodes))
 			for i, e := range result.Episodes {
-				log.Println("Episode:", e)
 				episodes[i] = model.PreviewEpisode{
 					ID:       e.ID,
 					IsDubbed: e.IsDubbed,

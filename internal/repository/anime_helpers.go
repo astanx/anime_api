@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/astanx/anime_api/internal/config"
@@ -57,7 +58,8 @@ func fetchAnilibriaReleases(endpoint string, query string, limit int) ([]model.S
 	baseURL := fmt.Sprintf("https://aniliberty.top/api/v1/%s?include=id,type.value,year,poster.src,name.main", endpoint)
 
 	if query != "" {
-		baseURL += fmt.Sprintf("&query=%s", query)
+		encodedQuery := url.QueryEscape(query)
+		baseURL += fmt.Sprintf("&query=%s", encodedQuery)
 	}
 	if limit > 0 {
 		baseURL += fmt.Sprintf("&limit=%d", limit)

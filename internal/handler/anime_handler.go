@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"github.com/astanx/anime_api/internal/service"
@@ -204,6 +205,35 @@ func (h *AnimeHandler) SearchAnimeByID(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"result": anime})
 }
 
+func (h *AnimeHandler) GetAnimeInfoByID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Println("missing id param in GetAnimeInfoByID")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
+		return
+	}
+
+	if _, err := strconv.Atoi(id); err == nil {
+		anime, err := h.service.GetAnimeInfoByAnilibriaID(id)
+		if err != nil {
+			log.Printf("GetAnimeInfoByID: failed to get anime info by anilibria id: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get anime info"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"result": anime})
+		return
+	}
+
+	anime, err := h.service.GetAnimeInfoByConsumetID(id)
+	if err != nil {
+		log.Printf("GetAnimeInfoByID: failed to get anime info by consumet id: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get anime info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": anime})
+}
+
 func (h *AnimeHandler) GetAnimeInfoByConsumetID(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
@@ -238,6 +268,52 @@ func (h *AnimeHandler) GetAnimeInfoByAnilibriaID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"result": anime})
+}
+
+func (h *AnimeHandler) GetEpisodeInfoByID(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		log.Println("missing id param in GetEpisodeInfoByID")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id param is required"})
+		return
+	}
+	uuidRegex := regexp.MustCompile(`^[a-f0-9-]{36}$`)
+
+	if uuidRegex.MatchString(id) {
+		episode, err := h.service.GetAnilibriaEpisodeInfo(id)
+		if err != nil {
+			log.Printf("GetEpisodeInfoByID: failed to get episode info: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get episode info"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"result": episode})
+		return
+	}
+	title := c.Query("title")
+	ordinalStr := c.Query("ordinal")
+	dub := c.DefaultQuery("dub", "false")
+
+	var ordinal int
+	if ordinalStr == "" {
+		ordinal = -1
+	} else {
+		var err error
+		ordinal, err = strconv.Atoi(ordinalStr)
+		if err != nil {
+			log.Printf("GetConsumetEpisodeInfo: invalid ordinal: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ordinal must be an integer"})
+			return
+		}
+	}
+	episode, err := h.service.GetConsumetEpisodeInfo(id, title, ordinal, dub)
+	if err != nil {
+		log.Printf("GetEpisodeInfoByID: failed to get episode info: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get episode info"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"result": episode})
 }
 
 func (h *AnimeHandler) GetAnilibriaEpisodeInfo(c *gin.Context) {
@@ -276,8 +352,8 @@ func (h *AnimeHandler) GetConsumetEpisodeInfo(c *gin.Context) {
 		var err error
 		ordinal, err = strconv.Atoi(ordinalStr)
 		if err != nil {
-			log.Printf("SearchAnilibriaRecommendedAnime: invalid limit: %v", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
+			log.Printf("GetConsumetEpisodeInfo: invalid ordinal: %v", err)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "ordinal must be an integer"})
 			return
 		}
 	}

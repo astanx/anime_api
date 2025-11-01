@@ -116,6 +116,8 @@ func NewRouter(databases *db.DB) *gin.Engine {
 				}
 
 				anime.GET("/search/:id", animeHandler.SearchAnimeByID)
+				anime.GET("/:id", animeHandler.GetAnimeInfoByID)
+				anime.GET("/episode/:id", animeHandler.GetEpisodeInfoByID)
 			}
 		}
 	}
