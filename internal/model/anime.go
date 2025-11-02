@@ -21,6 +21,6 @@ type ConsumetAnime struct {
 	Genres        []string                 `json:"genres"`
 	Status        string                   `json:"status"`
 	Type          string                   `json:"type"`
-	TotalEpisodes int                      `json:"total_episodes"`
+	TotalEpisodes int                      `json:"totalEpisodes"`
 	Episodes      []PreviewConsumetEpisode `json:"episodes"`
 }
