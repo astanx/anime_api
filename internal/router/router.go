@@ -18,6 +18,11 @@ func NewRouter(databases *db.DB) *gin.Engine {
 
 	v1 := r.Group("/api/v1")
 	{
+		v1.GET("/", func(c *gin.Context) {
+			c.JSON(200, gin.H{
+				"message": "Welcome to anime api!",
+			})
+		})
 		deviceRepo := repository.NewDeviceRepo(databases)
 		deviceService := service.NewDeviceService(deviceRepo)
 		deviceHandler := handler.NewDeviceHandler(deviceService)
