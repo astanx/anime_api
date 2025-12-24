@@ -14,20 +14,20 @@ func NewAnimeService(repo *repository.AnimeRepo) *AnimeService {
 }
 
 // Search
-func (s *AnimeService) SearchConsumetAnime(query string) ([]model.SearchAnime, error) {
-	return s.repo.SearchConsumetAnime(query)
+func (s *AnimeService) SearchConsumetAnime(query string, page int) (model.PaginatedSearchAnime, error) {
+	return s.repo.SearchConsumetAnime(query, page)
 }
 
-func (s *AnimeService) SearchAnilibriaAnime(query string) ([]model.SearchAnime, error) {
-	return s.repo.SearchAnilibriaAnime(query)
+func (s *AnimeService) SearchAnilibriaAnime(query string, page int) (model.PaginatedSearchAnime, error) {
+	return s.repo.SearchAnilibriaAnime(query, page)
 }
 
 func (s *AnimeService) SearchConsumetRecommendedAnime() ([]model.SearchAnime, error) {
 	return s.repo.SearchConsumetRecommendedAnime()
 }
 
-func (s *AnimeService) SearchAnilibriaRecommendedAnime(limit int) ([]model.SearchAnime, error) {
-	return s.repo.SearchAnilibriaRecommendedAnime(limit)
+func (s *AnimeService) SearchAnilibriaRecommendedAnime(limit int, page int) ([]model.SearchAnime, error) {
+	return s.repo.SearchAnilibriaRecommendedAnime(limit, page)
 }
 
 func (s *AnimeService) SearchConsumetLatestReleases() ([]model.SearchAnime, error) {
@@ -38,16 +38,16 @@ func (s *AnimeService) SearchAnilibriaLatestReleases(limit int) ([]model.SearchA
 	return s.repo.SearchAnilibriaLatestReleases(limit)
 }
 
-func (s *AnimeService) SearchAnilibriaRandomReleases(limit int) ([]model.SearchAnime, error) {
-	return s.repo.SearchAnilibriaRandomReleases(limit)
+func (s *AnimeService) SearchAnilibriaRandomReleases(limit int, page int) (model.PaginatedSearchAnime, error) {
+	return s.repo.SearchAnilibriaRandomReleases(limit, page)
 }
 
 func (s *AnimeService) SearchConsumetGenreReleases(genre string) ([]model.SearchAnime, error) {
 	return s.repo.SearchConsumetGenreReleases(genre)
 }
 
-func (s *AnimeService) SearchAnilibriaGenreReleases(genreID, limit int) ([]model.SearchAnime, error) {
-	return s.repo.SearchAnilibriaGenreReleases(genreID, limit)
+func (s *AnimeService) SearchAnilibriaGenreReleases(genreID, limit int, page int) (model.PaginatedSearchAnime, error) {
+	return s.repo.SearchAnilibriaGenreReleases(genreID, limit, page)
 }
 
 // Get genres

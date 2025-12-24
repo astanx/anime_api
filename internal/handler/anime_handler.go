@@ -27,8 +27,18 @@ func (h *AnimeHandler) SearchConsumetAnime(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query param is required"})
 		return
 	}
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		log.Printf("SearchConsumetAnime: invalid page: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be an integer"})
+		return
+	}
 
-	anime, err := h.service.SearchConsumetAnime(query)
+	anime, err := h.service.SearchConsumetAnime(query, pageInt)
 	if err != nil {
 		log.Printf("SearchConsumetAnime: failed to search: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to search"})
@@ -45,8 +55,18 @@ func (h *AnimeHandler) SearchAnilibriaAnime(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "query param is required"})
 		return
 	}
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		log.Printf("SearchAnilibriaAnime: invalid page: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be an integer"})
+		return
+	}
 
-	anime, err := h.service.SearchAnilibriaAnime(query)
+	anime, err := h.service.SearchAnilibriaAnime(query, pageInt)
 	if err != nil {
 		log.Printf("SearchAnilibriaAnime: failed to search: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to search"})
@@ -103,7 +123,17 @@ func (h *AnimeHandler) SearchAnilibriaGenreReleases(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
 		return
 	}
-	genres, err := h.service.SearchAnilibriaGenreReleases(genreId, limit)
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		log.Printf("SearchConsumetAnime: invalid page: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be an integer"})
+		return
+	}
+	genres, err := h.service.SearchAnilibriaGenreReleases(genreId, limit, pageInt)
 	if err != nil {
 		log.Printf("SearchAnilibriaGenreReleases: failed to get releases: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get releases"})
@@ -143,6 +173,10 @@ func (h *AnimeHandler) SearchAnilibriaLatestReleases(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
 		return
 	}
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
 	genres, err := h.service.SearchAnilibriaLatestReleases(limit)
 	if err != nil {
 		log.Printf("SearchAnilibriaLatestReleases: failed to get releases: %v", err)
@@ -177,7 +211,17 @@ func (h *AnimeHandler) SearchAnilibriaRandomReleases(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
 		return
 	}
-	genres, err := h.service.SearchAnilibriaRandomReleases(limit)
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		log.Printf("SearchConsumetAnime: invalid page: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be an integer"})
+		return
+	}
+	genres, err := h.service.SearchAnilibriaRandomReleases(limit, pageInt)
 	if err != nil {
 		log.Printf("SearchAnilibriaRandomReleases: failed to get releases: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get releases"})
@@ -390,8 +434,18 @@ func (h *AnimeHandler) SearchAnilibriaRecommendedAnime(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "limit must be an integer"})
 		return
 	}
+	page := c.Query("page")
+	if page == "" {
+		page = "1"
+	}
+	pageInt, err := strconv.Atoi(page)
+	if err != nil {
+		log.Printf("SearchConsumetAnime: invalid page: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "page must be an integer"})
+		return
+	}
 
-	anime, err := h.service.SearchAnilibriaRecommendedAnime(limit)
+	anime, err := h.service.SearchAnilibriaRecommendedAnime(limit, pageInt)
 	if err != nil {
 		log.Printf("SearchAnilibriaRecommendedAnime: failed to get releases: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get releases"})

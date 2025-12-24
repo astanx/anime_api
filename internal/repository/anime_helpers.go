@@ -43,39 +43,76 @@ func doJSONRequest(url string, target any) error {
 	return json.Unmarshal(body, target)
 }
 
-func fetchConsumet(endpoint string) ([]model.SearchAnime, error) {
-	url := fmt.Sprintf("%s/anime/zoro/%s", config.ConsumetUrl, endpoint)
-	var res struct {
-		Results []model.SearchAnime `json:"results"`
+func fetchConsumet(endpoint string, page int) (model.PaginatedSearchAnime, error) {
+	if page <= 0 {
+		page = 1
 	}
+	url := fmt.Sprintf("%s/anime/zoro/%s?page=%d", config.ConsumetUrl, endpoint, page)
+	var res model.PaginatedConsumetSearchAnime
 	if err := doJSONRequest(url, &res); err != nil {
-		return nil, err
+		return model.PaginatedSearchAnime{}, err
 	}
-	return res.Results, nil
+	return model.PaginatedSearchAnime{
+		Data: res.Data,
+		Meta: model.ShortPaginationMeta{
+			CurrentPage: res.CurrentPage,
+			HasNextPage: res.HasNextPage,
+			TotalPages:  res.TotalPages,
+		},
+	}, nil
 }
 
-func fetchAnilibriaReleases(endpoint string, query string, limit int) ([]model.SearchAnime, error) {
-	baseURL := fmt.Sprintf("https://aniliberty.top/api/v1/%s?include=id,type.value,year,poster.src,name.main", endpoint)
+func fetchAnilibriaReleases(endpoint string, query string, limit, page int) (model.PaginatedSearchAnime, error) {
+	if page <= 0 {
+		page = 1
+	}
+
+	baseURL := fmt.Sprintf("https://aniliberty.top/api/v1/%s?include=id,type.value,year,poster.src,name.main&page=%d", endpoint, page)
 
 	if query != "" {
-		encodedQuery := url.QueryEscape(query)
-		baseURL += fmt.Sprintf("&query=%s", encodedQuery)
+		baseURL += "&query=" + url.QueryEscape(query)
 	}
 	if limit > 0 {
 		baseURL += fmt.Sprintf("&limit=%d", limit)
 	}
 
-	var rawResult []model.SearchAnilibriaAnime
-	if err := doJSONRequest(baseURL, &rawResult); err != nil {
-		return nil, err
+	var rawArray []struct {
+		ID   int `json:"id"`
+		Type struct {
+			Value string `json:"value"`
+		} `json:"type"`
+		Year int `json:"year"`
+		Name struct {
+			Main string `json:"main"`
+		} `json:"name"`
+		Poster struct {
+			Src     string `json:"src"`
+			Preview string `json:"preview"`
+		} `json:"poster"`
 	}
 
-	result := make([]model.SearchAnime, 0, len(rawResult))
-	for _, a := range rawResult {
-		result = append(result, model.SearchAnime{
+	if err := doJSONRequest(baseURL, &rawArray); err != nil {
+		return model.PaginatedSearchAnime{}, err
+	}
+
+	result := model.PaginatedSearchAnime{
+		Data: make([]model.SearchAnime, 0, len(rawArray)),
+		Meta: model.ShortPaginationMeta{
+			CurrentPage: page,
+			HasNextPage: false,
+			TotalPages:  1,
+		},
+	}
+
+	for _, a := range rawArray {
+		poster := a.Poster.Preview
+		if poster == "" {
+			poster = a.Poster.Src
+		}
+		result.Data = append(result.Data, model.SearchAnime{
 			ID:         fmt.Sprint(a.ID),
 			Title:      a.Name.Main,
-			Poster:     fmt.Sprintf("https://aniliberty.top%s", a.Poster.Src),
+			Poster:     "https://aniliberty.top" + poster,
 			Year:       a.Year,
 			Type:       a.Type.Value,
 			ParserType: "Anilibria",

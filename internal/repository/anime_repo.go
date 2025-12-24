@@ -254,24 +254,27 @@ func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int, dub st
 	return episode, nil
 }
 
-func (r *AnimeRepo) SearchConsumetAnime(query string) ([]model.SearchAnime, error) {
+func (r *AnimeRepo) SearchConsumetAnime(query string, page int) (model.PaginatedSearchAnime, error) {
 	ctx := context.Background()
-	cacheKey := fmt.Sprintf("anime:search:consumet:query:%s", query)
+	cacheKey := fmt.Sprintf("anime:search:consumet:query:%s:page:%d", query, page)
 
 	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
 	if err == nil {
-		var anime []model.SearchAnime
+		var anime model.PaginatedSearchAnime
 		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
 			return anime, nil
 		}
 	}
-	rawResult, err := fetchConsumet(query)
+	rawResult, err := fetchConsumet(query, page)
 	if err != nil {
-		return nil, err
+		return model.PaginatedSearchAnime{}, err
 	}
 
-	result := make([]model.SearchAnime, 0)
-	for _, a := range rawResult {
+	result := model.PaginatedSearchAnime{
+		Data: make([]model.SearchAnime, 0),
+		Meta: rawResult.Meta,
+	}
+	for _, a := range rawResult.Data {
 		anime := model.SearchAnime{
 			ID:         a.ID,
 			Title:      a.Title,
@@ -280,13 +283,13 @@ func (r *AnimeRepo) SearchConsumetAnime(query string) ([]model.SearchAnime, erro
 			Type:       a.Type,
 			ParserType: "Consumet",
 		}
-		result = append(result, anime)
+		result.Data = append(result.Data, anime)
 		if !checkExists(r.dbPostgres, anime.ID) {
 			insertSearchAnime(r.dbPostgres, anime)
 		}
 	}
 
-	logSearchClickhouse(r.dbClickhouse, query, "consumet", len(result))
+	logSearchClickhouse(r.dbClickhouse, query, "consumet", len(result.Data))
 
 	animeJSON, _ := json.Marshal(result)
 	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
@@ -294,9 +297,39 @@ func (r *AnimeRepo) SearchConsumetAnime(query string) ([]model.SearchAnime, erro
 	return result, nil
 }
 
-func (r *AnimeRepo) SearchAnilibriaAnime(query string) ([]model.SearchAnime, error) {
+func (r *AnimeRepo) SearchAnilibriaAnime(query string, page int) (model.PaginatedSearchAnime, error) {
 	ctx := context.Background()
-	cacheKey := fmt.Sprintf("anime:search:anilibria:query:%s", query)
+	cacheKey := fmt.Sprintf("anime:search:anilibria:query:%s:page:%d", query, page)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var anime model.PaginatedSearchAnime
+		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
+			return anime, nil
+		}
+	}
+	result, err := fetchAnilibriaReleases("app/search/releases", query, 0, page)
+	if err != nil {
+		return model.PaginatedSearchAnime{}, err
+	}
+
+	for _, anime := range result.Data {
+		if !checkExists(r.dbPostgres, anime.ID) {
+			insertSearchAnime(r.dbPostgres, anime)
+		}
+	}
+
+	logSearchClickhouse(r.dbClickhouse, query, "anilibria", len(result.Data))
+
+	animeJSON, _ := json.Marshal(result)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+
+	return result, nil
+}
+
+func (r *AnimeRepo) SearchAnilibriaRecommendedAnime(limit int, page int) ([]model.SearchAnime, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:search:anilibria:recommended:limit:%d:page:%d", limit, page)
 
 	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
 	if err == nil {
@@ -305,53 +338,23 @@ func (r *AnimeRepo) SearchAnilibriaAnime(query string) ([]model.SearchAnime, err
 			return anime, nil
 		}
 	}
-	result, err := fetchAnilibriaReleases("app/search/releases", query, 0)
+	result, err := fetchAnilibriaReleases("anime/releases/recommended", "", limit, page)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, anime := range result {
+	for _, anime := range result.Data {
 		if !checkExists(r.dbPostgres, anime.ID) {
 			insertSearchAnime(r.dbPostgres, anime)
 		}
 	}
 
-	logSearchClickhouse(r.dbClickhouse, query, "anilibria", len(result))
+	logSearchClickhouse(r.dbClickhouse, "recommended", "anilibria", len(result.Data))
 
 	animeJSON, _ := json.Marshal(result)
 	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
 
-	return result, nil
-}
-
-func (r *AnimeRepo) SearchAnilibriaRecommendedAnime(limit int) ([]model.SearchAnime, error) {
-	ctx := context.Background()
-	cacheKey := fmt.Sprintf("anime:search:anilibria:recommended:limit:%d", limit)
-
-	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
-	if err == nil {
-		var anime []model.SearchAnime
-		if err := json.Unmarshal([]byte(cached), &anime); err == nil {
-			return anime, nil
-		}
-	}
-	result, err := fetchAnilibriaReleases("anime/releases/recommended", "", limit)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, anime := range result {
-		if !checkExists(r.dbPostgres, anime.ID) {
-			insertSearchAnime(r.dbPostgres, anime)
-		}
-	}
-
-	logSearchClickhouse(r.dbClickhouse, "recommended", "anilibria", len(result))
-
-	animeJSON, _ := json.Marshal(result)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
-
-	return result, nil
+	return result.Data, nil
 }
 
 func (r *AnimeRepo) SearchConsumetRecommendedAnime() ([]model.SearchAnime, error) {
@@ -426,37 +429,37 @@ func (r *AnimeRepo) SearchAnilibriaLatestReleases(limit int) ([]model.SearchAnim
 			return anime, nil
 		}
 	}
-	result, err := fetchAnilibriaReleases("anime/releases/latest", "", limit)
+	result, err := fetchAnilibriaReleases("anime/releases/latest", "", limit, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, anime := range result {
+	for _, anime := range result.Data {
 		if !checkExists(r.dbPostgres, anime.ID) {
 			insertSearchAnime(r.dbPostgres, anime)
 		}
 	}
 
-	logSearchClickhouse(r.dbClickhouse, "latest", "anilibria", len(result))
+	logSearchClickhouse(r.dbClickhouse, "latest", "anilibria", len(result.Data))
 
 	animeJSON, _ := json.Marshal(result)
 	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
-	return result, nil
+	return result.Data, nil
 }
 
-func (r *AnimeRepo) SearchAnilibriaRandomReleases(limit int) ([]model.SearchAnime, error) {
-	result, err := fetchAnilibriaReleases("anime/releases/random", "", limit)
+func (r *AnimeRepo) SearchAnilibriaRandomReleases(limit int, page int) (model.PaginatedSearchAnime, error) {
+	result, err := fetchAnilibriaReleases("anime/releases/random", "", limit, page)
 	if err != nil {
-		return nil, err
+		return model.PaginatedSearchAnime{}, err
 	}
 
-	for _, anime := range result {
+	for _, anime := range result.Data {
 		if !checkExists(r.dbPostgres, anime.ID) {
 			insertSearchAnime(r.dbPostgres, anime)
 		}
 	}
 
-	logSearchClickhouse(r.dbClickhouse, "random", "anilibria", len(result))
+	logSearchClickhouse(r.dbClickhouse, "random", "anilibria", len(result.Data))
 	return result, nil
 }
 
@@ -507,19 +510,19 @@ func (r *AnimeRepo) GetConsumetGenres() ([]string, error) {
 	return result, nil
 }
 
-func (r *AnimeRepo) SearchAnilibriaGenreReleases(genreID, limit int) ([]model.SearchAnime, error) {
-	result, err := fetchAnilibriaReleases(fmt.Sprintf("anime/releases/genre/%d/releases", genreID), "", limit)
+func (r *AnimeRepo) SearchAnilibriaGenreReleases(genreID, limit int, page int) (model.PaginatedSearchAnime, error) {
+	result, err := fetchAnilibriaReleases(fmt.Sprintf("anime/releases/genre/%d/releases", genreID), "", limit, page)
 	if err != nil {
-		return nil, err
+		return model.PaginatedSearchAnime{}, err
 	}
 
-	for _, anime := range result {
+	for _, anime := range result.Data {
 		if !checkExists(r.dbPostgres, anime.ID) {
 			insertSearchAnime(r.dbPostgres, anime)
 		}
 	}
 
-	logSearchClickhouse(r.dbClickhouse, "random", "anilibria", len(result))
+	logSearchClickhouse(r.dbClickhouse, "random", "anilibria", len(result.Data))
 	return result, nil
 }
 
