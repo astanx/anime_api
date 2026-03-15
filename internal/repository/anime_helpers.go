@@ -47,7 +47,9 @@ func fetchConsumet(endpoint string, page int) (model.PaginatedSearchAnime, error
 	if page <= 0 {
 		page = 1
 	}
-	url := fmt.Sprintf("%s/anime/zoro/%s?page=%d", config.ConsumetUrl, endpoint, page)
+
+	url := fmt.Sprintf("%s/anime/hianime/%s?page=%d", config.ConsumetUrl, endpoint, page)
+
 	var res model.PaginatedConsumetSearchAnime
 	if err := doJSONRequest(url, &res); err != nil {
 		return model.PaginatedSearchAnime{}, err
@@ -123,7 +125,7 @@ func fetchAnilibriaReleases(endpoint string, query string, limit, page int) (mod
 }
 
 func fetchConsumetReleases(endpoint string) ([]model.SearchAnime, error) {
-	baseURL := fmt.Sprintf("%s/anime/zoro/%s", config.ConsumetUrl, endpoint)
+	baseURL := fmt.Sprintf("%s/anime/hianime/%s", config.ConsumetUrl, endpoint)
 
 	var rawResult struct {
 		Results []model.SearchAnime `json:"results"`
@@ -133,6 +135,7 @@ func fetchConsumetReleases(endpoint string) ([]model.SearchAnime, error) {
 	}
 
 	result := make([]model.SearchAnime, 0, len(rawResult.Results))
+
 	for _, a := range rawResult.Results {
 		result = append(result, model.SearchAnime{
 			ID:         a.ID,

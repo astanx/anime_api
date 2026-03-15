@@ -188,14 +188,14 @@ func (h *AnimeHandler) SearchAnilibriaLatestReleases(c *gin.Context) {
 }
 
 func (h *AnimeHandler) SearchConsumetLatestReleases(c *gin.Context) {
-	genres, err := h.service.SearchConsumetLatestReleases()
+	releases, err := h.service.SearchConsumetLatestReleases()
 	if err != nil {
 		log.Printf("SearchConsumetLatestReleases: failed to get releases: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to get releases"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"results": genres})
+	c.JSON(http.StatusOK, gin.H{"results": releases})
 }
 
 func (h *AnimeHandler) SearchAnilibriaRandomReleases(c *gin.Context) {

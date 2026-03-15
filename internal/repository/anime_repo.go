@@ -62,7 +62,7 @@ func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 			return anime, nil
 		}
 	}
-	url := fmt.Sprintf("%s/anime/zoro/info?id=%s", config.ConsumetUrl, id)
+	url := fmt.Sprintf("%s/anime/hianime/info?id=%s", config.ConsumetUrl, id)
 	var result model.ConsumetAnime
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Anime{}, err
@@ -219,7 +219,8 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 }
 
 func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int, dub string) (model.Episode, error) {
-	url := fmt.Sprintf("%s/anime/zoro/watch?episodeId=%s&dub=%s", config.ConsumetUrl, id, dub)
+	url := fmt.Sprintf("%s/anime/hianime/watch/%s?dub=%s", config.ConsumetUrl, id, dub)
+
 	var result model.ConsumetEpisode
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Episode{}, err
@@ -498,7 +499,7 @@ func (r *AnimeRepo) GetConsumetGenres() ([]string, error) {
 			return genres, nil
 		}
 	}
-	baseURL := fmt.Sprintf("%s/anime/zoro/genre/list", config.ConsumetUrl)
+	baseURL := fmt.Sprintf("%s/anime/hianime/genre/list", config.ConsumetUrl)
 
 	var result []string
 	if err := doJSONRequest(baseURL, &result); err != nil {
