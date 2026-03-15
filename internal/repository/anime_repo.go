@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
@@ -219,7 +220,14 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 }
 
 func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int, dub string) (model.Episode, error) {
-	url := fmt.Sprintf("%s/anime/hianime/watch/%s?dub=%s", config.ConsumetUrl, id, dub)
+	var category string
+	if dub, _ := strconv.ParseBool(dub); dub {
+		category = "dub"
+	} else {
+		category = "sub"
+	}
+
+	url := fmt.Sprintf("%s/anime/hianime/watch/%s?category=%s", config.ConsumetUrl, id, category)
 
 	var result model.ConsumetEpisode
 	if err := doJSONRequest(url, &result); err != nil {
