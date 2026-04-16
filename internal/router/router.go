@@ -124,6 +124,17 @@ func NewRouter(databases *db.DB) *gin.Engine {
 				anime.GET("/:id", animeHandler.GetAnimeInfoByID)
 				anime.GET("/episode/:id", animeHandler.GetEpisodeInfoByID)
 			}
+
+			// MAL routes
+			malRepo := repository.NewMALRepo(databases, *collectionRepo, *historyRepo, *timecodeRepo)
+			malService := service.NewMALService(malRepo)
+			malHandler := handler.NewMALHandler(malService)
+
+			mal := authV1.Group("/mal")
+			{
+				mal.GET("/export", malHandler.ExportMALList)
+				mal.POST("/import", malHandler.ImportMALList)
+			}
 		}
 	}
 

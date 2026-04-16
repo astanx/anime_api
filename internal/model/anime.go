@@ -24,3 +24,8 @@ type ConsumetAnime struct {
 	TotalEpisodes int                      `json:"totalEpisodes"`
 	Episodes      []PreviewConsumetEpisode `json:"episodes"`
 }
+
+type ConsumetAnimeWithMAL struct {
+	ConsumetAnime
+	MalID int `json:"malID"`
+}
