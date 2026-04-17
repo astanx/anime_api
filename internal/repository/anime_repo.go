@@ -93,7 +93,7 @@ func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 		}(),
 	}
 	animeJSON, _ := json.Marshal(anime)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 1*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 4*time.Hour)
 
 	return anime, nil
 }
@@ -148,7 +148,7 @@ func (r *AnimeRepo) GetAnimeInfoByAnilibriaID(id string) (model.Anime, error) {
 	anime.Episodes = episodes
 
 	animeJSON, _ := json.Marshal(anime)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 1*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 4*time.Hour)
 
 	return anime, nil
 }
@@ -215,7 +215,7 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 	insertEpisode(r.dbPostgres, episode)
 
 	episodeJSON, _ := json.Marshal(episode)
-	r.dbRedis.Set(ctx, cacheKey, episodeJSON, 1*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, episodeJSON, 12*time.Hour)
 
 	return episode, nil
 }
@@ -302,7 +302,7 @@ func (r *AnimeRepo) SearchConsumetAnime(query string, page int) (model.Paginated
 	logSearchClickhouse(r.dbClickhouse, query, "consumet", len(result.Data))
 
 	animeJSON, _ := json.Marshal(result)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 12*time.Hour)
 
 	return result, nil
 }
@@ -332,7 +332,7 @@ func (r *AnimeRepo) SearchAnilibriaAnime(query string, page int) (model.Paginate
 	logSearchClickhouse(r.dbClickhouse, query, "anilibria", len(result.Data))
 
 	animeJSON, _ := json.Marshal(result)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 12*time.Hour)
 
 	return result, nil
 }
@@ -362,7 +362,7 @@ func (r *AnimeRepo) SearchAnilibriaRecommendedAnime(limit int, page int) ([]mode
 	logSearchClickhouse(r.dbClickhouse, "recommended", "anilibria", len(result.Data))
 
 	animeJSON, _ := json.Marshal(result)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 12*time.Hour)
 
 	return result.Data, nil
 }
@@ -392,7 +392,7 @@ func (r *AnimeRepo) SearchConsumetRecommendedAnime() ([]model.SearchAnime, error
 	logSearchClickhouse(r.dbClickhouse, "recommended", "consumet", len(result))
 
 	animeJSON, _ := json.Marshal(result)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 12*time.Hour)
 
 	return result, nil
 }
@@ -423,7 +423,7 @@ func (r *AnimeRepo) SearchConsumetLatestReleases() ([]model.SearchAnime, error) 
 	logSearchClickhouse(r.dbClickhouse, "latest", "consumet", len(result))
 
 	animeJSON, _ := json.Marshal(result)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 12*time.Hour)
 
 	return result, nil
 }
@@ -453,7 +453,7 @@ func (r *AnimeRepo) SearchAnilibriaLatestReleases(limit int) ([]model.SearchAnim
 	logSearchClickhouse(r.dbClickhouse, "latest", "anilibria", len(result.Data))
 
 	animeJSON, _ := json.Marshal(result)
-	r.dbRedis.Set(ctx, cacheKey, animeJSON, 8*time.Hour)
+	r.dbRedis.Set(ctx, cacheKey, animeJSON, 12*time.Hour)
 	return result.Data, nil
 }
 

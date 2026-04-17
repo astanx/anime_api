@@ -140,7 +140,10 @@ func (r *MALRepo) ImportMALList(deviceID, malList string) (int, error) {
 
 func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 	rows, err := r.dbPostgres.Query(
-		"SELECT anime_id, type FROM collections WHERE device_id = $1",
+		`SELECT c.anime_id, c.type, h.last_watched FROM collections as c 
+		LEFT JOIN history as h 
+		ON h.device_id = c.device_id AND h.anime_id = c.anime_id
+		WHERE c.device_id = $1`,
 		deviceID,
 	)
 	if err != nil {
@@ -152,9 +155,12 @@ func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 	for rows.Next() {
 		var animeID string
 		var animeStatus string
-		if err := rows.Scan(&animeID, &animeStatus); err != nil {
+		var lastWatched sql.NullInt64
+
+		if err := rows.Scan(&animeID, &animeStatus, &lastWatched); err != nil {
 			continue
 		}
+
 		_, err := strconv.Atoi(animeID)
 		if err == nil {
 			continue
@@ -171,23 +177,15 @@ func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 			continue
 		}
 
-		row, err := r.dbPostgres.Query(
-			"SELECT last_watched FROM history WHERE device_id = $1 AND anime_id = $2", deviceID, animeID,
-		)
-
-		var lastWatched int
-		if err == nil && row.Next() {
-			if err := row.Scan(&lastWatched); err != nil {
-				lastWatched = 0
-			}
-		} else {
-			lastWatched = 0
+		watched := 0
+		if lastWatched.Valid {
+			watched = int(lastWatched.Int64)
 		}
 
 		animes = append(animes, model.MALAnime{
 			SeriesAnimeDBID:   idAnime.MalID,
 			SeriesTitle:       idAnime.Title,
-			MyWatchedEpisodes: lastWatched,
+			MyWatchedEpisodes: watched,
 			MyStatus:          status,
 			UpdateOnImport:    1,
 		})
@@ -202,12 +200,10 @@ func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 		Animes: animes,
 	}
 
-	output, err := xml.MarshalIndent(malList, "", "    ")
+	output, err := xml.MarshalIndent(malList, "", "  ")
 	if err != nil {
 		return "", err
 	}
 
-	xmlWithHeader := xml.Header + string(output)
-
-	return xmlWithHeader, nil
+	return xml.Header + string(output), nil
 }
