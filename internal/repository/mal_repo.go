@@ -8,26 +8,30 @@ import (
 	"time"
 
 	clickhouse "github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/astanx/anime_api/internal/config"
 	"github.com/astanx/anime_api/internal/db"
 	"github.com/astanx/anime_api/internal/model"
+	"github.com/redis/go-redis/v9"
 )
 
 type MALRepo struct {
 	dbPostgres     *sql.DB
 	dbClickhouse   clickhouse.Conn
+	dbRedis        *redis.Client
 	collectionRepo CollectionRepo
 	historyRepo    HistoryRepo
 	timecodeRepo   TimecodeRepo
+	animeRepo      AnimeRepo
 }
 
-func NewMALRepo(db *db.DB, collectionRepo CollectionRepo, historyRepo HistoryRepo, timecodeRepo TimecodeRepo) *MALRepo {
+func NewMALRepo(db *db.DB, collectionRepo CollectionRepo, historyRepo HistoryRepo, timecodeRepo TimecodeRepo, animeRepo AnimeRepo) *MALRepo {
 	return &MALRepo{
 		dbPostgres:     db.Postgres,
 		dbClickhouse:   db.ClickHouse,
+		dbRedis:        db.Redis,
 		collectionRepo: collectionRepo,
 		historyRepo:    historyRepo,
 		timecodeRepo:   timecodeRepo,
+		animeRepo:      animeRepo,
 	}
 }
 
@@ -71,26 +75,27 @@ func (r *MALRepo) ImportMALList(deviceID, malList string) (int, error) {
 	var count int
 
 	for _, anime := range mal.Animes {
-		url := fmt.Sprintf("%s/anime/hianime/%s", config.ConsumetUrl, anime.SeriesTitle)
+		res, err := r.animeRepo.SearchConsumetAnime(anime.SeriesTitle, 1)
 
-		var res model.PaginatedConsumetSearchAnime
-		if err := doJSONRequest(url, &res); err != nil {
-			return 0, err
+		if err != nil {
+			continue
 		}
 
-		for _, a := range res.Data {
-			url := fmt.Sprintf("%s/anime/hianime/info?id=%s", config.ConsumetUrl, a.ID)
-			var res model.ConsumetAnimeWithMAL
+		now := time.Now()
 
-			if err := doJSONRequest(url, &res); err != nil {
+		for _, a := range res.Data {
+			idAnime, err := r.animeRepo.GetAnimeInfoByConsumetID(a.ID)
+
+			if err != nil {
 				continue
 			}
 
-			if res.MalID == anime.SeriesAnimeDBID {
+			fmt.Println("Parsed anime malID ", idAnime.MalID, "Trying to find ", anime.SeriesAnimeDBID)
 
+			if idAnime.MalID == anime.SeriesAnimeDBID {
 				status, err := convertMalToStatus(anime.MyStatus)
 				if err != nil {
-					continue
+					break
 				}
 
 				collection := model.Collection{
@@ -101,28 +106,26 @@ func (r *MALRepo) ImportMALList(deviceID, malList string) (int, error) {
 				r.collectionRepo.AddCollection(deviceID, collection)
 				count++
 
-				now := time.Now()
-
-				if anime.MyWatchedEpisodes > res.TotalEpisodes || anime.MyWatchedEpisodes == 0 {
-					continue
+				if anime.MyWatchedEpisodes > idAnime.TotalEpisodes || anime.MyWatchedEpisodes == 0 {
+					break
 				}
 
 				history := model.History{
 					AnimeID:            a.ID,
 					LastWatchedEpisode: anime.MyWatchedEpisodes,
-					IsWatched:          anime.MyWatchedEpisodes == res.TotalEpisodes,
+					IsWatched:          anime.MyWatchedEpisodes == idAnime.TotalEpisodes,
 					WatchedAt:          &now,
 				}
 				r.historyRepo.AddHistory(deviceID, history)
 
 				for number := 0; number < anime.MyWatchedEpisodes; number++ {
-					episode := res.Episodes[number]
+					episode := idAnime.Episodes[number]
 
 					timecode := model.Timecode{
 						EpisodeID: episode.ID,
 						IsWatched: true,
 						Time:      0,
-						AnimeID:   res.ID,
+						AnimeID:   idAnime.ID,
 					}
 
 					r.timecodeRepo.AddTimecode(deviceID, timecode)
@@ -131,6 +134,7 @@ func (r *MALRepo) ImportMALList(deviceID, malList string) (int, error) {
 			}
 		}
 	}
+
 	return count, nil
 }
 
@@ -156,10 +160,9 @@ func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 			continue
 		}
 
-		url := fmt.Sprintf("%s/anime/hianime/info?id=%s", config.ConsumetUrl, animeID)
-		var res model.MALListAnime
+		idAnime, err := r.animeRepo.GetAnimeInfoByConsumetID(animeID)
 
-		if err := doJSONRequest(url, &res); err != nil {
+		if err != nil {
 			continue
 		}
 
@@ -182,8 +185,8 @@ func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 		}
 
 		animes = append(animes, model.MALAnime{
-			SeriesAnimeDBID:   res.AnimeID,
-			SeriesTitle:       res.Title,
+			SeriesAnimeDBID:   idAnime.MalID,
+			SeriesTitle:       idAnime.Title,
 			MyWatchedEpisodes: lastWatched,
 			MyStatus:          status,
 			UpdateOnImport:    1,

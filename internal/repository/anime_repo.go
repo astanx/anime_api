@@ -64,12 +64,13 @@ func (r *AnimeRepo) GetAnimeInfoByConsumetID(id string) (model.Anime, error) {
 		}
 	}
 	url := fmt.Sprintf("%s/anime/hianime/info?id=%s", config.ConsumetUrl, id)
-	var result model.ConsumetAnime
+	var result model.ConsumetAnimeWithMAL
 	if err := doJSONRequest(url, &result); err != nil {
 		return model.Anime{}, err
 	}
 	var anime = model.Anime{
 		ID:            result.ID,
+		MalID:         result.MalID,
 		Title:         result.Title,
 		Poster:        result.Image,
 		Description:   result.Description,

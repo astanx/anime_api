@@ -126,7 +126,7 @@ func NewRouter(databases *db.DB) *gin.Engine {
 			}
 
 			// MAL routes
-			malRepo := repository.NewMALRepo(databases, *collectionRepo, *historyRepo, *timecodeRepo)
+			malRepo := repository.NewMALRepo(databases, *collectionRepo, *historyRepo, *timecodeRepo, *animeRepo)
 			malService := service.NewMALService(malRepo)
 			malHandler := handler.NewMALHandler(malService)
 

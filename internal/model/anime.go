@@ -2,6 +2,7 @@ package model
 
 type Anime struct {
 	ID            string           `json:"id"`
+	MalID         int              `json:"malID"`
 	Title         string           `json:"title"`
 	Poster        string           `json:"image"`
 	Description   string           `json:"description"`
