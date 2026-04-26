@@ -45,3 +45,33 @@ type PaginatedConsumetSearchAnime struct {
 	TotalPages  int           `json:"totalPages"`
 	HasNextPage bool          `json:"hasNextPage"`
 }
+
+type MALPagination struct {
+	LastVisiblePage int  `json:"last_visible_page"`
+	HasNextPage     bool `json:"has_next_page"`
+	CurrentPage     int  `json:"current_page"`
+	Items           struct {
+		Count   int `json:"count"`
+		Total   int `json:"total"`
+		PerPage int `json:"per_page"`
+	} `json:"items"`
+}
+
+type PaginatedMALSearchAnime struct {
+	Data       []MALAnime    `json:"data"`
+	Pagination MALPagination `json:"pagination"`
+}
+
+type PaginatedMALLatestAnime struct {
+	Data       []MALLatestAnime `json:"data"`
+	Pagination MALPagination    `json:"pagination"`
+}
+
+type PaginatedMALPreviewEpisodes struct {
+	Data       []PreviewMALEpisode `json:"data"`
+	Pagination MALPagination       `json:"pagination"`
+}
+
+type MalPreviewEpisode struct {
+	Data PreviewMALEpisode `json:"data"`
+}

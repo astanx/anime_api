@@ -221,6 +221,16 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 }
 
 func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int, dub string) (model.Episode, error) {
+	ctx := context.Background()
+	cacheKey := fmt.Sprintf("anime:consumet:episode:id:%s", id)
+
+	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var episode model.Episode
+		if err := json.Unmarshal([]byte(cached), &episode); err == nil {
+			return episode, nil
+		}
+	}
 	var category string
 	if dub, _ := strconv.ParseBool(dub); dub {
 		category = "dub"
@@ -235,31 +245,33 @@ func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int, dub st
 		return model.Episode{}, err
 	}
 
-	finalTitle := result.Title
-	if title != "" {
-		finalTitle = title
-	}
+	finalTitle := title
 
-	finalOrdinal := result.Ordinal
-	if ordinal != -1 {
-		finalOrdinal = ordinal
-	}
+	finalOrdinal := ordinal
 
 	episode := model.Episode{
 		ID:      id,
 		Title:   finalTitle,
 		Ordinal: finalOrdinal,
 		Opening: model.TimeSegment{
-			Start: result.Intro.Start,
-			End:   result.Intro.End,
+			Start: 0,
+			End:   0,
 		},
 		Ending: model.TimeSegment{
-			Start: result.Outro.Start,
-			End:   result.Outro.End,
+			Start: 0,
+			End:   0,
 		},
-		Sources:   result.Sources,
-		Subtitles: result.Subtitles,
+		Sources: []model.Source{
+			{
+				Url:  result.Iframe,
+				Type: "iframe",
+			},
+		},
+		Subtitles: []model.Subtitle{},
 	}
+
+	episodeJSON, _ := json.Marshal(episode)
+	r.dbRedis.Set(ctx, cacheKey, episodeJSON, 12*time.Hour)
 
 	return episode, nil
 }

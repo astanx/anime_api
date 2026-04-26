@@ -16,6 +16,12 @@ type PreviewConsumetEpisode struct {
 	Title    string `json:"title"`
 }
 
+type PreviewMALEpisode struct {
+	ID    int    `json:"mal_id"`
+	Url   string `json:"url"`
+	Title string `json:"title"`
+}
+
 type TimeSegment struct {
 	Start int `json:"start"`
 	End   int `json:"end"`
@@ -24,6 +30,7 @@ type Source struct {
 	Url  string `json:"url"`
 	Type string `json:"type"`
 }
+
 type Subtitle struct {
 	Vtt      string `json:"url"`
 	Language string `json:"lang"`
@@ -60,14 +67,18 @@ type AnilibriaEpisode struct {
 	Hls1080 string `json:"hls_1080"`
 }
 
+// type ConsumetEpisode struct {
+// 	ID      string      `json:"id"`
+// 	Ordinal int         `json:"ordinal"`
+// 	Title   string      `json:"title"`
+// 	Intro   TimeSegment `json:"intro"`
+// 	Outro   TimeSegment `json:"outro"`
+
+// 	Sources []Source `json:"sources"`
+
+// 	Subtitles []Subtitle `json:"subtitles"`
+// }
+
 type ConsumetEpisode struct {
-	ID      string      `json:"id"`
-	Ordinal int         `json:"ordinal"`
-	Title   string      `json:"title"`
-	Intro   TimeSegment `json:"intro"`
-	Outro   TimeSegment `json:"outro"`
-
-	Sources []Source `json:"sources"`
-
-	Subtitles []Subtitle `json:"subtitles"`
+	Iframe string `json:"iframe"`
 }

@@ -151,7 +151,7 @@ func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 	}
 	defer rows.Close()
 
-	animes := make([]model.MALAnime, 0)
+	animes := make([]model.MALListAnime, 0)
 	for rows.Next() {
 		var animeID string
 		var animeStatus string
@@ -182,7 +182,7 @@ func (r *MALRepo) ExportMALList(deviceID string) (string, error) {
 			watched = int(lastWatched.Int64)
 		}
 
-		animes = append(animes, model.MALAnime{
+		animes = append(animes, model.MALListAnime{
 			SeriesAnimeDBID:   idAnime.MalID,
 			SeriesTitle:       idAnime.Title,
 			MyWatchedEpisodes: watched,

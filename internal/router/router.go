@@ -135,6 +135,20 @@ func NewRouter(databases *db.DB) *gin.Engine {
 				mal.GET("/export", malHandler.ExportMALList)
 				mal.POST("/import", malHandler.ImportMALList)
 			}
+
+			// Torrent routes
+			torrentRepo := repository.NewTorrentRepo(databases, *collectionRepo, *historyRepo, *timecodeRepo, *animeRepo)
+			torrentService := service.NewTorrentService(torrentRepo)
+			torrentHandler := handler.NewTorrentHandler(torrentService)
+
+			torrent := authV1.Group("/torrent")
+			{
+				torrent.GET("/mal/search", torrentHandler.SearchMALAnime)
+				torrent.GET("/mal/recommended", torrentHandler.SearchMALRecommendedAnime)
+				torrent.GET("/mal/latest", torrentHandler.SearchMALLatestReleases)
+				torrent.GET("/mal/:id", torrentHandler.SearchMALById)
+				torrent.GET("/mal/:id/episode/:episodeId", torrentHandler.SearchMALByEpisodeId)
+			}
 		}
 	}
 
