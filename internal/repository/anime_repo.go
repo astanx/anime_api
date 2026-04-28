@@ -222,7 +222,7 @@ func (r *AnimeRepo) GetAnilibriaEpisodeInfo(id string) (model.Episode, error) {
 
 func (r *AnimeRepo) GetConsumetEpisodeInfo(id, title string, ordinal int, dub string) (model.Episode, error) {
 	ctx := context.Background()
-	cacheKey := fmt.Sprintf("anime:consumet:episode:id:%s", id)
+	cacheKey := fmt.Sprintf("anime:consumet:episode:id:%s:dub:%s", id, dub)
 
 	cached, err := r.dbRedis.Get(ctx, cacheKey).Result()
 	if err == nil {
